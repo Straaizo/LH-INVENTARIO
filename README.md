@@ -27,6 +27,7 @@ Sistema de gestión de inventario desarrollado en **Flutter**, con enfoque corpo
 
 ## 📂 Estructura del proyecto
 
+```text
 .
 ├── lib/
 │   ├── main.dart
@@ -36,6 +37,8 @@ Sistema de gestión de inventario desarrollado en **Flutter**, con enfoque corpo
 │
 └── assets/
     └── images/
+```
+ 
 
 
 
