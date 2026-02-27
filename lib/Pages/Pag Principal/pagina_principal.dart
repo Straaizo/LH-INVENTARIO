@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -15,6 +17,7 @@ class PaginaPrincipal extends StatefulWidget {
 
     // VARIABLES //
 
+    String _SelectedMenu = "";
 
     // PEQUEÑA SIMULACION DE NOMBRE DE USUARIO (PARA DESPUES TRAERLO CON AL BD )
     String _userName = "Sebastian";
@@ -83,7 +86,7 @@ class PaginaPrincipal extends StatefulWidget {
                       Padding(
                         padding: const EdgeInsets.only(left: 25, top: 7),  
                           child: Text(
-                          "Bienvendio, $_userName",
+                          "Bienvenido, $_userName",
                           style: TextStyle(
                             fontFamily: GoogleFonts.montserrat().fontFamily,
                             color: Colors.white,
@@ -149,13 +152,206 @@ class PaginaPrincipal extends StatefulWidget {
                     
                     Expanded(
                       flex: 1,
+                      
                       child: Container(
-                        color: Colors.white..withOpacity(0.08),
-
-                        /// COLUMN organiza los iconos verticalmente ///
+                        color:  Color(0xFF2E7D32),
+                        padding: EdgeInsets.only(top: 25),
                         
+                        /// COLUMN organiza los iconos verticalmente ///
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          
+                          children: [
+                            MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: (){
+                                    setState(() {
+                                      _SelectedMenu = "Entregar";
+                                    });
+                                  },
+                                  hoverColor: Colors.white.withOpacity(0.08),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 250),
+                                    curve: Curves.easeInOut,
+                                    color: _SelectedMenu == "Entregar"
+                                        ? const Color(0xFF1E6F2A)
+                                        : Colors.transparent,
+                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      children: [
+                                        const SizedBox(width: 20),
+                                        const Icon(
+                                          Icons.shopping_cart_outlined,
+                                          color: Colors.white,
+                                          size: 28
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          "Entregar",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontFamily: GoogleFonts.montserrat().fontFamily,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            // SEPARACION VERTICAL DEL SIDEBAR Y SUS ITEMS //
+                            SizedBox(height: 25),
+                            MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: (){
+                                    setState(() {
+                                      _SelectedMenu = "Inventario";
+                                    });
+                                  },
+                                  hoverColor: Colors.white.withOpacity(0.08),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 400),
+                                    curve: Curves.easeInOut,
+                                    color: _SelectedMenu == "Inventario"
+                                        ? const Color(0xFF1E6F2A)
+                                        : Colors.transparent,
+                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      children: [
+                                        const SizedBox(width: 20),
+                                        const Icon(
+                                          Icons.inventory_outlined,
+                                          color: Colors.white,
+                                          size: 28
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          "Inventario",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontFamily: GoogleFonts.montserrat().fontFamily,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 25),
+
+                           MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: (){
+                                    setState(() {
+                                      _SelectedMenu = "Productos";
+                                    });
+                                  },
+                                  hoverColor: Colors.white.withOpacity(0.08),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 250),
+                                    curve: Curves.easeInOut,
+                                    color: _SelectedMenu == "Productos"
+                                        ? const Color(0xFF1E6F2A)
+                                        : Colors.transparent,
+                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      children: [
+                                        const SizedBox(width: 20),
+                                        const Icon(
+                                          Icons.local_shipping_outlined,
+                                          color: Colors.white,
+                                          size: 28
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          "Productos",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontFamily: GoogleFonts.montserrat().fontFamily,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 35),
+                              MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: (){
+                                    setState(() {
+                                      _SelectedMenu = "Salir";
+                                    });
+                                  },
+                                  hoverColor: Colors.white.withOpacity(0.08),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 250),
+                                    curve: Curves.easeInOut,
+                                    color: _SelectedMenu == "Salir"
+                                        ? const Color(0xFF1E6F2A)
+                                        : Colors.transparent,
+                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      children: [
+                                        const SizedBox(width: 20),
+                                        const Icon(
+                                          Icons.logout_outlined,
+                                          color: Colors.white,
+                                          size: 28
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          "Salir",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontFamily: GoogleFonts.montserrat().fontFamily,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],  
+                       ),
                       ),
-                    )
+                    ),
+
+              Expanded(
+                flex: 4,
+                child: Container(
+                  alignment: Alignment.center,
+                  child: Text(
+                    _SelectedMenu, // Temporal
+                    style: TextStyle(
+                      fontSize: 32,
+                      color: Colors.white,
+                      fontFamily: GoogleFonts.montserrat().fontFamily,
+                    ), 
+                  ),
+                ),
+              )
+
+
                   ],
                 ),
 
