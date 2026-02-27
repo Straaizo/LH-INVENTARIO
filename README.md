@@ -21,7 +21,7 @@ Sistema de gestión de inventario desarrollado en **Flutter**, con enfoque corpo
 - **Flutter**
 - **Dart**
 - Material Design.
-- Layout basado en `Expanded` y `Flex.
+- Layout basado en `Expanded` y `Flex`.
 
 ---
 
