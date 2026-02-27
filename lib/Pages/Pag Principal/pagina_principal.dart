@@ -339,7 +339,8 @@ class PaginaPrincipal extends StatefulWidget {
               Expanded(
                 flex: 4,
                 child: Container(
-                  alignment: Alignment.center,
+                  alignment: Alignment.topCenter,
+                  padding: EdgeInsets.only(top: 30),
                   child: Text(
                     _SelectedMenu, // Temporal
                     style: TextStyle(
