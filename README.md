@@ -1,17 +1,43 @@
-# lh_tonner
+# 📦 Sistema de Inventario - LH Toner
 
-A new Flutter project.
+Sistema de gestión de inventario desarrollado en **Flutter**, con enfoque corporativo, diseño moderno.
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## 🚀 Características actuales
 
-A few resources to get you started if this is your first Flutter project:
+- 🔐 Pantalla de Login personalizada.
+- 🧭 Navegación limpia sin back stack después del login.
+- 📊 Sidebar lateral.
+- 📅 Filtro dinámico por fecha (Hoy, Semana, Mes, Año).
+- 👤 Bienvenida dinámica preparada para backend.
+- 📱 Diseño responsive con `Expanded`.
+- 🧱 Estructura modular por páginas.
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🛠 Tecnologías utilizadas
+
+- **Flutter**
+- **Dart**
+- Material Design.
+- Layout basado en `Expanded` y `Flex.
+
+---
+
+## 📂 Estructura del proyecto
+
+lib/
+│
+├── main.dart
+│
+└── pages/
+├── login.dart
+└── home_page.dart
+
+assets/
+└── images/
+
+
+
+
