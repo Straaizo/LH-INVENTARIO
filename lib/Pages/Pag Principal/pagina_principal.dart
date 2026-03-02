@@ -35,8 +35,66 @@ class PaginaPrincipal extends StatefulWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+
+    return  LayoutBuilder(
+      builder: (context, constraints) {
       
+      bool isMobile = constraints.maxWidth < 700;
+      
+      return Scaffold(
+
+        drawer: isMobile
+          ? Drawer(
+            child: Container(
+              color:const Color(0xFF2E7D32),
+              child: SafeArea(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      
+                      const SizedBox(height: 30),
+
+                      Padding(
+                        padding: const EdgeInsetsGeometry.symmetric(horizontal: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Bienvenido,",
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
+                                fontFamily: GoogleFonts.montserrat().fontFamily,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              _userName,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontFamily: GoogleFonts.montserrat().fontFamily
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 30),
+
+                      Divider(color: Colors.white.withOpacity(0.2)),
+                  
+                      const SizedBox(height: 20),
+
+                      _sidebarItems(),
+                      
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          )
+          : null,
 
       body: Container(
 
@@ -70,21 +128,28 @@ class PaginaPrincipal extends StatefulWidget {
                   child: Row(
                     children: [
 
-                      
+                          if (isMobile)
+                            Builder(
+                              builder: (context) => IconButton(
+                                icon: const Icon(Icons.menu, color: Colors.white),
+                                onPressed: () => Scaffold.of(context).openDrawer(),
+                         ),
+                      ),
 
                      // Titulo
-
-                     Text(
-                        
+                    Expanded(
+                      child: Text(
                         "Sistema Inventario",
                         style: TextStyle(
                           fontFamily: GoogleFonts.montserrat().fontFamily,
                           color: Colors.white,
-                          fontSize: 26
+                          fontSize: isMobile ? 18 : 26,
                         ),
                      ),
+                    ),
+                    if (!isMobile)
                       Padding(
-                        padding: const EdgeInsets.only(left: 25, top: 7),  
+                        padding: const EdgeInsets.only(left: 5, top: 7, right: 15),  
                           child: Text(
                           "Bienvenido, $_userName",
                           style: TextStyle(
@@ -94,7 +159,7 @@ class PaginaPrincipal extends StatefulWidget {
                          ),
                         ),
                       ),
-                     const Spacer(),
+                     if (!isMobile) const Spacer(),
                       
                       // DROPWDWON FILTRO PARA BUSCAR //
                       Container(
@@ -144,228 +209,108 @@ class PaginaPrincipal extends StatefulWidget {
                 /// ROW divde la pantalla horizontalmente:
                 /// Sidebar | Conenido ///
                 
+                /// SIDE BAR PARA EL MOVIL ///
                 child: Row(
                   children: [
-
+                      if (!isMobile)
+                      Expanded(
+                        flex: 1,
+                        child: Container(
+                          color: const Color(0xFF2E7D32),
+                          padding: const EdgeInsets.only(top: 25),
+                          child: _sidebarItems(),
+                        ),
+                      ),
 
                     /// SIDE BAR IZQUIERDO ///
                     
                     Expanded(
-                      flex: 1,
+                      flex: 4,
                       
                       child: Container(
-                        color:  Color(0xFF2E7D32),
-                        padding: EdgeInsets.only(top: 25),
-                        
-                        /// COLUMN organiza los iconos verticalmente ///
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          
-                          children: [
-                            MouseRegion(
-                              cursor: SystemMouseCursors.click,
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: (){
-                                    setState(() {
-                                      _SelectedMenu = "Entregar";
-                                    });
-                                  },
-                                  hoverColor: Colors.white.withOpacity(0.08),
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 250),
-                                    curve: Curves.easeInOut,
-                                    color: _SelectedMenu == "Entregar"
-                                        ? const Color(0xFF1E6F2A)
-                                        : Colors.transparent,
-                                    padding: const EdgeInsets.symmetric(vertical: 10),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.start,
-                                      children: [
-                                        const SizedBox(width: 20),
-                                        const Icon(
-                                          Icons.shopping_cart_outlined,
-                                          color: Colors.white,
-                                          size: 28
-                                        ),
-                                        const SizedBox(width: 10),
-                                        Text(
-                                          "Entregar",
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontFamily: GoogleFonts.montserrat().fontFamily,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            // SEPARACION VERTICAL DEL SIDEBAR Y SUS ITEMS //
-                            SizedBox(height: 25),
-                            MouseRegion(
-                              cursor: SystemMouseCursors.click,
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: (){
-                                    setState(() {
-                                      _SelectedMenu = "Inventario";
-                                    });
-                                  },
-                                  hoverColor: Colors.white.withOpacity(0.08),
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 400),
-                                    curve: Curves.easeInOut,
-                                    color: _SelectedMenu == "Inventario"
-                                        ? const Color(0xFF1E6F2A)
-                                        : Colors.transparent,
-                                    padding: const EdgeInsets.symmetric(vertical: 10),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.start,
-                                      children: [
-                                        const SizedBox(width: 20),
-                                        const Icon(
-                                          Icons.inventory_outlined,
-                                          color: Colors.white,
-                                          size: 28
-                                        ),
-                                        const SizedBox(width: 10),
-                                        Text(
-                                          "Inventario",
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontFamily: GoogleFonts.montserrat().fontFamily,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 25),
-
-                           MouseRegion(
-                              cursor: SystemMouseCursors.click,
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: (){
-                                    setState(() {
-                                      _SelectedMenu = "Productos";
-                                    });
-                                  },
-                                  hoverColor: Colors.white.withOpacity(0.08),
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 250),
-                                    curve: Curves.easeInOut,
-                                    color: _SelectedMenu == "Productos"
-                                        ? const Color(0xFF1E6F2A)
-                                        : Colors.transparent,
-                                    padding: const EdgeInsets.symmetric(vertical: 10),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.start,
-                                      children: [
-                                        const SizedBox(width: 20),
-                                        const Icon(
-                                          Icons.local_shipping_outlined,
-                                          color: Colors.white,
-                                          size: 28
-                                        ),
-                                        const SizedBox(width: 10),
-                                        Text(
-                                          "Productos",
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontFamily: GoogleFonts.montserrat().fontFamily,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 35),
-                              MouseRegion(
-                              cursor: SystemMouseCursors.click,
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: (){
-                                    setState(() {
-                                      _SelectedMenu = "Salir";
-                                    });
-                                  },
-                                  hoverColor: Colors.white.withOpacity(0.08),
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 250),
-                                    curve: Curves.easeInOut,
-                                    color: _SelectedMenu == "Salir"
-                                        ? const Color(0xFF1E6F2A)
-                                        : Colors.transparent,
-                                    padding: const EdgeInsets.symmetric(vertical: 10),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.start,
-                                      children: [
-                                        const SizedBox(width: 20),
-                                        const Icon(
-                                          Icons.logout_outlined,
-                                          color: Colors.white,
-                                          size: 28
-                                        ),
-                                        const SizedBox(width: 10),
-                                        Text(
-                                          "Salir",
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontFamily: GoogleFonts.montserrat().fontFamily,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],  
-                       ),
+                        alignment: Alignment.center,
+                        padding: EdgeInsets.only(top: 30),
+                        child: Text(
+                          _SelectedMenu,
+                          style: TextStyle(
+                            fontSize: isMobile ? 22 : 32,
+                            color: Colors.white,
+                            fontFamily: GoogleFonts.montserrat().fontFamily,
+                          ),
+                        ),
                       ),
-                    ),
-
-              Expanded(
-                flex: 4,
-                child: Container(
-                  alignment: Alignment.topCenter,
-                  padding: EdgeInsets.only(top: 30),
-                  child: Text(
-                    _SelectedMenu, // Temporal
-                    style: TextStyle(
-                      fontSize: 32,
-                      color: Colors.white,
-                      fontFamily: GoogleFonts.montserrat().fontFamily,
-                    ), 
+                      ),
+                    ],
                   ),
                 ),
-              )
-
-
-                  ],
-                ),
-
-
-              )
-            
-            
-            ],
+              ],
+            ),          
           ),
+        ),                
+      );                  
+    },                        
+  );
+}                   
+ // ================= SIDEBAR ITEMS =================
+Widget _sidebarItems() {
+    return Column(
+      
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
 
-        ),
+        _buildItem("Entregar", Icons.shopping_cart_outlined),
+        const SizedBox(height: 25),
+        _buildItem("Inventario", Icons.inventory_outlined),
+        const SizedBox(height: 25),
+        _buildItem("Productos", Icons.local_shipping_outlined),
+        const SizedBox(height: 35),
+        _buildItem("Salir", Icons.logout_outlined),
 
+      ],
+    );
+  }
+
+  // ================= ITEM INDIVIDUAL =================
+Widget _buildItem(String label, IconData icon) {
+    return MouseRegion(
+      
+
+
+      cursor: SystemMouseCursors.click,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: (){
+            setState(() {
+              _SelectedMenu = label;
+            });
+          },
+          hoverColor: Colors.white.withOpacity(0.08),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeInOut,
+            color: _SelectedMenu == label
+                ? const Color(0xFF1E6F2A)
+                : Colors.transparent,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                const SizedBox(width: 20),
+                Icon(icon, color: Colors.white, size: 28),
+                const SizedBox(width: 10),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontFamily: GoogleFonts.montserrat().fontFamily,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-      );
+      ),
+    );
   }
 }
