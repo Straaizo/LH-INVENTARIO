@@ -1,4 +1,6 @@
 import 'dart:ui';
+import 'package:lh_tonner/Pages/Login/Login.dart';
+
 import 'entregar.dart';
 import 'inventario.dart';
 import 'productos.dart';
@@ -27,14 +29,7 @@ class PaginaPrincipal extends StatefulWidget {
 
     // FILTRO DE DIAS, MESES, AÑOS. PARA BUSCAR O FILTRAR ENTREGAS Y SALIDAS //
 
-    String _SelectedFilter = "Hoy";
 
-    final List<String> _filters = [
-      "Hoy",
-      "Esta Semana",
-      "Este mes",
-      "Este Año",
-    ];
 
   @override
   Widget build(BuildContext context) {
@@ -222,7 +217,7 @@ class PaginaPrincipal extends StatefulWidget {
       case "Productos":
         return const ProductosPage();
       default:
-        return const PaginaPrincipal();
+        return const EntregarPage();
     }
   }
  
@@ -262,9 +257,13 @@ Widget _buildItem(String label, IconData icon) {
         color: Colors.transparent,
         child: InkWell(
           onTap: (){
+            if (label == "Salir") {
+              _MostrarDialogoSalir();
+            } else {
             setState(() {
               _SelectedMenu = label;
             });
+            }
           },
           hoverColor: Colors.white.withOpacity(0.08),
           child: AnimatedContainer(
@@ -293,5 +292,83 @@ Widget _buildItem(String label, IconData icon) {
         ),
       ),
     );
+  }
+
+
+
+void _MostrarDialogoSalir() {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    barrierColor: Colors.black54,
+    builder: (context) {
+      return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(25),
+          width: 400,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.logout_outlined,
+                size: 40,
+                color: Colors.red[400],
+              ),
+              const SizedBox(height: 15),
+
+              Text("¿Seguro que quieres salir?",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontSize: 18,
+                  fontFamily: GoogleFonts.montserrat().fontFamily
+                ),
+              ),
+              
+              const SizedBox(height: 25),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      child: const Text("Cancelar"),
+                    ),
+                  ),
+
+                  const SizedBox(width: 10),
+
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red
+                      ),
+                      onPressed: () {
+
+                        Navigator.pushAndRemoveUntil(
+                          context, 
+                          MaterialPageRoute(
+                            builder: (context) => const Login(),
+                          ),
+                          (route) => false,
+                        );
+                      },
+                      child: const Text("Salir"),
+                    ),
+                  ),
+                ],
+              )
+
+              
+            ],
+          ),
+        ),
+      );
+    },
+  );
   }
 }
