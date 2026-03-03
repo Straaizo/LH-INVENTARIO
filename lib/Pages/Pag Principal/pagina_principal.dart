@@ -1,4 +1,7 @@
 import 'dart:ui';
+import 'entregar.dart';
+import 'inventario.dart';
+import 'productos.dart';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -149,7 +152,7 @@ class PaginaPrincipal extends StatefulWidget {
                     ),
                     if (!isMobile)
                       Padding(
-                        padding: const EdgeInsets.only(left: 5, top: 7, right: 15),  
+                        padding:  EdgeInsets.only(left: 5, top: 7, right: 25),  
                           child: Text(
                           "Bienvenido, $_userName",
                           style: TextStyle(
@@ -159,42 +162,6 @@ class PaginaPrincipal extends StatefulWidget {
                          ),
                         ),
                       ),
-                     if (!isMobile) const Spacer(),
-                      
-                      // DROPWDWON FILTRO PARA BUSCAR //
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 15),
-                        decoration: BoxDecoration(
-                          // ignore: deprecated_member_use
-                          color: Colors.white.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        // DropdownButtonHideUnderLine. ///
-                        // Elimina la linea inferior que tiene por defecto. ///
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _SelectedFilter,
-                            dropdownColor: Colors.green[700],
-                            iconEnabledColor: Colors.white,
-                            style: const TextStyle(color: Colors.white),
-                            items: _filters.map((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            }).toList(),
-
-                            /// Cuando cambia el valor (Hoy, Esta semana, Mes, Año.) ///
-                            onChanged: (String? newValue){
-                              setState(() {
-                                _SelectedFilter = newValue!;
-                              });
-                            },
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 30),             
                     ],
                   ),
                 ),
@@ -223,22 +190,15 @@ class PaginaPrincipal extends StatefulWidget {
                       ),
 
                     /// SIDE BAR IZQUIERDO ///
+                    /// CUERPO AL LADO DEL SIDE BAR//
                     
                     Expanded(
                       flex: 4,
-                      
                       child: Container(
-                        alignment: Alignment.center,
-                        padding: EdgeInsets.only(top: 30),
-                        child: Text(
-                          _SelectedMenu,
-                          style: TextStyle(
-                            fontSize: isMobile ? 22 : 32,
-                            color: Colors.white,
-                            fontFamily: GoogleFonts.montserrat().fontFamily,
-                          ),
-                        ),
-                      ),
+                        alignment: Alignment.topCenter,
+                        padding: const EdgeInsets.only(top: 20),
+                        child: _buildContent(),
+                        ),     
                       ),
                     ],
                   ),
@@ -251,7 +211,28 @@ class PaginaPrincipal extends StatefulWidget {
     },                        
   );
 }                   
- // ================= SIDEBAR ITEMS =================
+ 
+ 
+ Widget _buildContent() {
+    switch (_SelectedMenu) {
+      case "Entregar":
+        return const EntregarPage();
+      case "Inventario":
+        return const InventarioPage();
+      case "Productos":
+        return const ProductosPage();
+      default:
+        return const PaginaPrincipal();
+    }
+  }
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ // SIDEBAR ITEMS //
 Widget _sidebarItems() {
     return Column(
       
@@ -270,7 +251,7 @@ Widget _sidebarItems() {
     );
   }
 
-  // ================= ITEM INDIVIDUAL =================
+  //  ITEM INDIVIDUAL //
 Widget _buildItem(String label, IconData icon) {
     return MouseRegion(
       
