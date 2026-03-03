@@ -58,7 +58,7 @@ Widget build(BuildContext context) {
 
                           
                   
-                  const SizedBox(width: 15),
+                  const SizedBox(height: 15),
 
                   Row(
                     children: [
