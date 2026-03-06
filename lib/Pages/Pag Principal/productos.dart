@@ -70,7 +70,7 @@ Widget build(BuildContext context) {
                         
                       ),
                       onPressed: () {
-                       // _mostrarFormulario();
+                       _mostrarFormularioProducto();
                       },
                       icon: Icon(Icons.add_outlined,
                       color: Colors.white),
@@ -106,7 +106,7 @@ Widget build(BuildContext context) {
                       backgroundColor: Colors.green
                     ),
                   onPressed: () {
-                    // 
+                    _mostrarFormularioProducto();
                   },
                   icon: Icon(Icons.add_outlined, color: Colors.white),
                   label: Text(
@@ -205,4 +205,127 @@ Widget build(BuildContext context) {
     ],
   );
  }
+
+
+void _mostrarFormularioProducto() {
+
+  TextEditingController nombreController = TextEditingController();
+
+  String? categoriaSeleccionada;
+
+  showDialog(
+    context: context,
+    barrierColor: Colors.black54,
+    builder: (context) {
+
+      return StatefulBuilder(
+        builder: (context, setStateDialog) {
+
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+
+            child: Container(
+              width: 400,
+              padding: const EdgeInsets.all(25),
+
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+
+                  Text(
+                    "Agregar Producto",
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontFamily: GoogleFonts.montserrat().fontFamily,
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // =========================
+                  // DROPDOWN CATEGORIA
+                  // =========================
+
+                  DropdownButtonFormField<String>(
+                    value: categoriaSeleccionada,
+                    hint: const Text("Seleccionar categoría"),
+                    items: const [
+                      DropdownMenuItem(
+                        value: "Tóner",
+                        child: Text("Tóner"),
+                      ),
+                      DropdownMenuItem(
+                        value: "Tambor",
+                        child: Text("Tambor"),
+                      ),
+                    ],
+
+                    onChanged: (value) {
+                      setStateDialog(() {
+                        categoriaSeleccionada = value;
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 15),
+
+                  // =========================
+                  // NOMBRE PRODUCTO
+                  // =========================
+
+                  TextField(
+                    controller: nombreController,
+                    decoration: const InputDecoration(
+                      labelText: "Nombre del producto",
+                    ),
+                  ),
+
+                  const SizedBox(height: 25),
+
+                  Row(
+                    children: [
+
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: (){
+                            Navigator.pop(context);
+                          },
+                          child: const Text("Cancelar"),
+                        ),
+                      ),
+
+                      const SizedBox(width: 10),
+
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+
+                            setState(() {
+
+                              productos.add({
+                                "nombre": nombreController.text,
+                                "categoria": categoriaSeleccionada ?? "Tóner"
+                              });
+
+                            });
+
+                            Navigator.pop(context);
+
+                          },
+                          child: const Text("Guardar"),
+                        ),
+                        )
+                      ],
+                    )
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 }

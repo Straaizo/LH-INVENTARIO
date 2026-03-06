@@ -66,7 +66,7 @@ class _InventarioPageState extends State<InventarioPage> {
                               backgroundColor: Colors.green,
                             ),
                             onPressed: () {
-                              //_mostrarformulario();
+                              _mostrarFormulario();
                             },
                             icon: Icon(Icons.add_outlined,
                             color: Colors.white),

@@ -7,7 +7,10 @@ class EntregarPage extends StatefulWidget {
   const EntregarPage({super.key});
 
   State<EntregarPage> createState() => _EntregarPageState();
+
 }
+ 
+
 
 class _EntregarPageState extends State<EntregarPage>{
 
@@ -17,8 +20,32 @@ class _EntregarPageState extends State<EntregarPage>{
     {"fecha": "17/2/2026", "solicitante": "Oficina Central", "productos": "TN1060 (1)"},
   ];
 
+    // LISTA DE SOLICITANTES
+  List<String> solicitantes = [
+    "Oficina Central",
+    "Santa Victoria",
+    "Cullipeumo",
+    "Hospital",
+    "Santa Inés",
+    "Maitén",
+    "San Manuel",
+    "Itahue",
+  ];
 
-
+  // LISTA DE PRODUCTOS
+  List<String> productos = [
+    "TN2370",
+    "TN1060",
+    "TN860XL",
+    "TN450",
+    "CF238A",
+    "CF279A",
+    "DR1060",
+    "DR2370",
+  ];
+ 
+  List<ProductoEntrega> productosEntrega = [ProductoEntrega()];
+  
   @override
   Widget build(BuildContext context) {
 
@@ -84,7 +111,7 @@ class _EntregarPageState extends State<EntregarPage>{
                         
                       ),
                       onPressed: () {
-                       // _mostrarFormulario();
+                       _mostrarFormularioEntregar();
                       },
                       icon: Icon(Icons.add_outlined,
                       color: Colors.white),
@@ -140,7 +167,7 @@ class _EntregarPageState extends State<EntregarPage>{
                   backgroundColor: Colors.green,
                 ),
                 onPressed: () {
-                 // _mostrarFormulario();
+                  _mostrarFormularioEntregar();
                 },
                 icon:  Icon(Icons.add_outlined,
                 color: Colors.white,),
@@ -187,6 +214,192 @@ class _EntregarPageState extends State<EntregarPage>{
         );
       },
     );
-  }  
-}
+  }
 
+  void _mostrarFormularioEntregar() {
+
+    String? solicitanteSeleccionado;
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black54,
+    
+      builder: (context) {
+
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+
+              child: Container(
+                width: 450,
+                
+                padding: const EdgeInsets.all(25),
+
+    
+
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+
+                    Text(
+                      "Registrar Entrega",
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontFamily: GoogleFonts.montserrat().fontFamily,
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // ================= SOLICITANTE =================
+
+                    DropdownButtonFormField<String>(
+                      value: solicitanteSeleccionado,
+                      hint: const Text("Seleccionar solicitante"),
+                      items: solicitantes.map((s) {
+                        return DropdownMenuItem(
+                          value: s,
+                          child: Text(s),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setStateDialog(() {
+                          solicitanteSeleccionado = value;
+                        });
+                      },
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // ================= PRODUCTOS DINAMICOS =================
+
+                    Column(
+                      children: List.generate(productosEntrega.length, (index) {
+
+                        return Column(
+                          children: [
+
+                            Row(
+                              children: [
+
+                                Expanded(
+                                  flex: 2,
+                                  child: DropdownButtonFormField<String>(
+                                    value: productosEntrega[index].producto,
+                                    hint: const Text("Producto"),
+                                    items: productos.map((p) {
+                                      return DropdownMenuItem(
+                                        value: p,
+                                        child: Text(p),
+                                      );
+                                    }).toList(),
+                                    onChanged: (value) {
+                                      setStateDialog(() {
+                                        productosEntrega[index].producto =
+                                            value;
+                                      });
+                                    },
+                                  ),
+                                ),
+
+                                const SizedBox(width: 10),
+
+                                Expanded(
+                                  child: TextField(
+                                    controller:
+                                        productosEntrega[index].cantidad,
+                                    keyboardType: TextInputType.number,
+                                    decoration: const InputDecoration(
+                                      labelText: "Cantidad",
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 10),
+                          ],
+                        );
+                      }),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    // ================= BOTON AGREGAR PRODUCTO =================
+
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: () {
+                          setStateDialog(() {
+                            productosEntrega.add(ProductoEntrega());
+                          });
+                        },
+                        icon: const Icon(Icons.add),
+                        label: const Text("Agregar otro producto"),
+                      ),
+                    ),
+
+                    const SizedBox(height: 25),
+
+                    Row(
+                      children: [
+
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: (){
+                              Navigator.pop(context);
+                            },
+                            child: const Text("Cancelar"),
+                          ),
+                        ),
+
+                        const SizedBox(width: 10),
+
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+
+                              String fechaHoy =
+                                  "${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}";
+
+                              String productosTexto = productosEntrega.map((p) {
+                                return "${p.producto} (${p.cantidad.text})";
+                              }).join(", ");
+
+                              setState(() {
+                                entregas.add({
+                                  "fecha": fechaHoy,
+                                  "solicitante": solicitanteSeleccionado ?? "",
+                                  "productos": productosTexto
+                                });
+                              });
+
+                              productosEntrega = [ProductoEntrega()];
+
+                              Navigator.pop(context);
+                            },
+                            child: const Text("Guardar"),
+                          ),
+                        )
+                      ],
+                    )
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+}
+class ProductoEntrega {
+  String? producto;
+  TextEditingController cantidad = TextEditingController();
+  }

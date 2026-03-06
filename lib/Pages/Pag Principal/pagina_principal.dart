@@ -263,6 +263,12 @@ Widget _buildItem(String label, IconData icon) {
             setState(() {
               _SelectedMenu = label;
             });
+
+            // PARA QUE CIERRE EL SIDE BAR CADA VEZ QUE SE SELECCIONE UNO //
+            if (MediaQuery.of(context).size.width < 700) {
+                Navigator.pop(context);
+            }
+            
             }
           },
           hoverColor: Colors.white.withOpacity(0.08),
