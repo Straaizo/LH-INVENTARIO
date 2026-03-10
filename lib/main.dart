@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:lh_tonner/Pages/Login/Login.dart';
 
-void main() => runApp(const MyApp());
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const MyApp());
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

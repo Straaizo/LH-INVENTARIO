@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:lh_tonner/Pages/Login/Login.dart';
+import 'package:lh_tonner/services/login_api.dart';
 
 import 'entregar.dart';
 import 'inventario.dart';
@@ -9,25 +10,37 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class PaginaPrincipal extends StatefulWidget {
-  const PaginaPrincipal({super.key});
+  const PaginaPrincipal({super.key, this.email, this.nombreUsuario = 'Usuario'});
 
-  @override 
+  /// Email del usuario logueado. Si se pasa, el menú principal busca el nombre en la API/tabla.
+  final String? email;
+
+  /// Nombre por defecto si no se pasa email o mientras se carga desde la API.
+  final String nombreUsuario;
+
+  @override
   State<PaginaPrincipal> createState() => _PaginaPrincipal();
+}
 
+class _PaginaPrincipal extends State<PaginaPrincipal> {
+  String _SelectedMenu = "";
+  late String _nombreEnHeader;
 
+  @override
+  void initState() {
+    super.initState();
+    _nombreEnHeader = widget.nombreUsuario;
+    if (widget.email != null && widget.email!.trim().isNotEmpty) {
+      _cargarNombreDesdeApi();
+    }
   }
 
-  class _PaginaPrincipal extends State<PaginaPrincipal>{
-    
+  Future<void> _cargarNombreDesdeApi() async {
+    final nombre = await LoginApi.obtenerNombreUsuario(widget.email!);
+    if (mounted) setState(() => _nombreEnHeader = nombre);
+  }
 
-    // VARIABLES //
 
-    String _SelectedMenu = "";
-
-    // PEQUEÑA SIMULACION DE NOMBRE DE USUARIO (PARA DESPUES TRAERLO CON AL BD )
-    String _userName = "Sebastian";
-
-    // FILTRO DE DIAS, MESES, AÑOS. PARA BUSCAR O FILTRAR ENTREGAS Y SALIDAS //
 
 
 
@@ -68,7 +81,7 @@ class PaginaPrincipal extends StatefulWidget {
                             ),
                             const SizedBox(height: 5),
                             Text(
-                              _userName,
+                              _nombreEnHeader,
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 20,
@@ -149,7 +162,7 @@ class PaginaPrincipal extends StatefulWidget {
                       Padding(
                         padding:  EdgeInsets.only(left: 5, top: 7, right: 25),  
                           child: Text(
-                          "Bienvenido, $_userName",
+                          "Bienvenido, $_nombreEnHeader",
                           style: TextStyle(
                             fontFamily: GoogleFonts.montserrat().fontFamily,
                             color: Colors.white,
@@ -273,7 +286,7 @@ Widget _buildItem(String label, IconData icon) {
           },
           hoverColor: Colors.white.withOpacity(0.08),
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 250),
+            duration: const Duration(milliseconds: 0),
             curve: Curves.easeInOut,
             color: _SelectedMenu == label
                 ? const Color(0xFF1E6F2A)

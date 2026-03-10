@@ -1,23 +1,78 @@
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lh_tonner/Pages/Pag%20Principal/pagina_principal.dart';
-
-
+import 'package:lh_tonner/services/login_api.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
 
   @override
   State<Login> createState() => _loginPageState();
-  
+}
+
+class _loginPageState extends State<Login> {
+  /// Variable para controlar la visibilidad de la contraseña.
+  bool _obscurePassword = true;
+
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  /// Mensajes de error (null = sin error). Se muestra subrayado rojo y texto debajo del campo.
+  String? _emailError;
+  String? _passwordError;
+
+  /// True mientras se está validando con la API (muestra carga en el botón).
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
-  class _loginPageState extends State<Login>{
+  Future<void> _iniciarSesion() async {
+    final email = _emailController.text;
+    final password = _passwordController.text;
 
+    setState(() {
+      _emailError = null;
+      _passwordError = null;
 
-  /// Variable para controlar la visibilidad de la contraseña.
-  bool _obscurePassword = true;  
+      if (email.trim().isEmpty) {
+        _emailError = 'Ingrese su correo';
+      }
+      if (password.isEmpty) {
+        _passwordError = 'Ingrese su contraseña';
+      }
+    });
+    if (_emailError != null || _passwordError != null) return;
+
+    setState(() => _isLoading = true);
+    final result = await LoginApi.validar(email, password);
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+    if (!mounted) return;
+    if (result.ok) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PaginaPrincipal(
+            email: email.trim().isEmpty ? null : email.trim(),
+            nombreUsuario: result.nombre ?? 'Usuario',
+          ),
+        ),
+        (Route<dynamic> route) => false,
+      );
+    } else {
+      setState(() {
+        _emailError = result.message;
+        _passwordError = result.message;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
 
@@ -138,20 +193,37 @@ class Login extends StatefulWidget {
                       children: [
 
                         // CAMPO USUARIO - EMAIL //
-
                         TextField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          onSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                          onChanged: (_) => setState(() => _emailError = null),
                           decoration: InputDecoration(
                             hintText: 'Ingrese su correo',
-                            filled: true, 
-                            // FILLED sirve para activar el color de fondo en componentes (TextFields, Inputs ETC..)
+                            filled: true,
                             fillColor: Colors.white,
-                            prefixIcon: const Icon(
+                            errorText: _emailError,
+                            errorStyle: TextStyle(
+                              color: const Color.fromARGB(255, 255, 0, 0),
+                              fontFamily: GoogleFonts.montserrat().fontFamily,
+                              fontSize: 13,
+                            ),
+                            prefixIcon: Icon(
                               Icons.email,
-                              color: Colors.green,
+                              color: _emailError != null ? Colors.red[700]! : Colors.green,
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
                               borderSide: BorderSide.none,
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(color: Colors.red[700]!, width: 2),
+                            ),
+                            focusedErrorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(color: Colors.red[700]!, width: 2),
                             ),
                           ),
                         ),
@@ -160,36 +232,47 @@ class Login extends StatefulWidget {
 
                         // CAMPO CONTRASEÑA //
                         TextField(
+                          controller: _passwordController,
                           obscureText: _obscurePassword,
-                          // Esto hace que la contraseña se oculte si el bool es 
-                          // (true el cual)
-                          // esta mas arriba detallado //
+                          textInputAction: TextInputAction.done,
+                          onSubmitted: (_) => _iniciarSesion(),
+                          onChanged: (_) => setState(() => _passwordError = null),
                           decoration: InputDecoration(
                             hintText: 'Ingrese su Contraseña',
                             filled: true,
                             fillColor: Colors.white,
-                            prefixIcon: const Icon(
+                            errorText: _passwordError,
+                            errorStyle: TextStyle(
+                              color: const Color.fromARGB(255, 255, 0, 0),
+                              fontFamily: GoogleFonts.montserrat().fontFamily,
+                              fontSize: 13,
+                            ),
+                            prefixIcon: Icon(
                               Icons.lock,
-                              color: Colors.green,
+                              color: _passwordError != null ? Colors.red[700]! : Colors.green,
                             ),
                             suffixIcon: IconButton(
-                              // Boton para mostrar / ocultar la contraseña.
                               icon: Icon(
                                 _obscurePassword
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
                               ),
                               onPressed: () {
-                                
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
+                                setState(() => _obscurePassword = !_obscurePassword);
                               },
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
                               borderSide: BorderSide.none,
-                            )
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(color: Colors.red[700]!, width: 2),
+                            ),
+                            focusedErrorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(color: Colors.red[700]!, width: 2),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 35),
@@ -198,32 +281,30 @@ class Login extends StatefulWidget {
                         SizedBox(
                           width: double.infinity,
                           height: 55,
-                          // double.infinity hace que ocupe todo el ancho.
                           child: ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.green[700],
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadiusGeometry.circular(30),
+                                borderRadius: BorderRadius.circular(30),
                               ),
                             ),
-                            onPressed: (
-                            ){
-                              Navigator.pushAndRemoveUntil(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const PaginaPrincipal(),
-                                ),
-                              (Route<dynamic> route) => false,
-                              );
-                            },
-                            icon: const Icon(Icons.login,
-                            color: Colors.white),
+                            onPressed: _isLoading ? null : _iniciarSesion,
+                            icon: _isLoading
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Icon(Icons.login, color: Colors.white),
                             label: Text(
-                              'Iniciar Sesion',
+                              _isLoading ? 'Cargando...' : 'Iniciar Sesion',
                               style: TextStyle(
                                 fontFamily: GoogleFonts.montserrat().fontFamily,
                                 fontSize: 16,
-                                color: Colors.white
+                                color: Colors.white,
                               ),
                             ),
                           ),
@@ -240,7 +321,7 @@ class Login extends StatefulWidget {
                   flex: 1,
                   child: Center(
                     child: Padding(
-                      padding: const EdgeInsetsGeometry.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
                       child:  Text(
                         'Desarrollado por el departamento de TI de la Hornilla.',
                         textAlign: TextAlign.center,

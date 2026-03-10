@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "tu-proyecto-firebase",
+    "lh-tonners": "lh-toner"
+  },
+  "targets": {},
+  "etags": {}
+}

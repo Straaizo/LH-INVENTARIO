@@ -107,11 +107,11 @@ class _InventarioPageState extends State<InventarioPage> {
                       },
                       icon: Icon(Icons.add_outlined,
                       color: Colors.white,),
-                      label: Text("Añadir",
+                      label: Text("Agregar",
                       style: TextStyle(color: Colors.white),
                       ),
                     ),
-                    const SizedBox(width: 15),
+             
                   ],                  
                 ),
               ),
