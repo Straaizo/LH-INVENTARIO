@@ -2,11 +2,12 @@ import 'package:lh_tonner/services/api_client.dart';
 
 /// Respuesta del endpoint de login.
 class LoginResult {
-  const LoginResult({required this.ok, this.nombre, this.message});
+  const LoginResult({required this.ok, this.nombre, this.message, this.token});
 
   final bool ok;
   final String? nombre;
   final String? message;
+  final String? token;
 }
 
 /// Llama al blueprint usuarios_lh_toner para validar credenciales.
@@ -32,11 +33,15 @@ class LoginApi {
       final String? nombre = data['nombre'] as String? ??
           data['name'] as String? ??
           data['nombre_usuario'] as String?;
+      final String? token = data['access_token'] as String? ??
+          data['token'] as String? ??
+          data['token_access'] as String?;
 
       if (esExito) {
         return LoginResult(
           ok: true,
           nombre: nombre?.trim().isNotEmpty == true ? nombre : 'Usuario',
+          token: token,
         );
       }
       return LoginResult(

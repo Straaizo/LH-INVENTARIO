@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:lh_tonner/Pages/Login/Login.dart';
+import 'package:lh_tonner/services/api_client.dart';
 import 'package:lh_tonner/services/login_api.dart';
 
 import 'entregar.dart';
@@ -285,9 +286,7 @@ Widget _buildItem(String label, IconData icon) {
             }
           },
           hoverColor: Colors.white.withOpacity(0.08),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 0),
-            curve: Curves.easeInOut,
+          child: Container(
             color: _SelectedMenu == label
                 ? const Color(0xFF1E6F2A)
                 : Colors.transparent,
@@ -367,7 +366,7 @@ void _MostrarDialogoSalir() {
                         backgroundColor: Colors.red
                       ),
                       onPressed: () {
-
+                        ApiClient.setAuthToken(null);
                         Navigator.pushAndRemoveUntil(
                           context, 
                           MaterialPageRoute(

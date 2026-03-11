@@ -6,14 +6,27 @@ import '../config/api_config.dart';
 
 /// Cliente HTTP para comunicar el frontend Flutter con la API Flask.
 /// Usa [ApiConfig.baseUrl] para todas las peticiones.
+/// Si hay token ([setAuthToken]), se envía como header Authorization: Bearer.
 class ApiClient {
   ApiClient._();
 
   static final _client = http.Client();
-  static final _headers = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-  };
+  static String? _authToken;
+
+  static void setAuthToken(String? token) {
+    _authToken = token;
+  }
+
+  static Map<String, String> get _headers {
+    final h = <String, String>{
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+    if (_authToken != null && _authToken!.isNotEmpty) {
+      h['Authorization'] = 'Bearer $_authToken';
+    }
+    return h;
+  }
 
   static String _url(String path) {
     final p = path.startsWith('/') ? path : '/$path';
@@ -81,10 +94,10 @@ class ApiClient {
     if (ok) {
       return ApiResponse.success(res.statusCode, body);
     }
-    return ApiResponse.error(
-      body is Map ? (body['message'] ?? body['error'] ?? res.body) : res.body,
-      statusCode: res.statusCode,
-    );
+    final String msg = body is Map
+        ? (body['message'] ?? body['error'] ?? body['msg'] ?? res.body).toString()
+        : res.body;
+    return ApiResponse.error(msg, statusCode: res.statusCode, data: body is Map ? body : null);
   }
 }
 
@@ -108,12 +121,13 @@ class ApiResponse {
     return ApiResponse._(ok: true, statusCode: statusCode, data: data);
   }
 
-  factory ApiResponse.error(String message, {int? statusCode, StackTrace? stackTrace}) {
+  factory ApiResponse.error(String message, {int? statusCode, StackTrace? stackTrace, dynamic data}) {
     return ApiResponse._(
       ok: false,
       statusCode: statusCode,
       message: message,
       stackTrace: stackTrace,
+      data: data,
     );
   }
 }

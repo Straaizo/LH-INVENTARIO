@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lh_tonner/Pages/Pag%20Principal/pagina_principal.dart';
+import 'package:lh_tonner/services/api_client.dart';
 import 'package:lh_tonner/services/login_api.dart';
 
 class Login extends StatefulWidget {
@@ -55,6 +56,9 @@ class _loginPageState extends State<Login> {
     setState(() => _isLoading = false);
     if (!mounted) return;
     if (result.ok) {
+      if (result.token != null && result.token!.isNotEmpty) {
+        ApiClient.setAuthToken(result.token);
+      }
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
@@ -82,11 +86,6 @@ class _loginPageState extends State<Login> {
       title: 'LH TONNER',
       home: Scaffold(
         body: Stack(
-       /// Stack permite superponer widgets uno encima de otro
-        /// En este caso:
-        /// 1️⃣ Imagen de fondo ///
-        /// 2️⃣ Overlay oscuro ///
-        /// 3️⃣ Contenido principal ///
         children: [
 
           // IMAGEN DE FONDO //
