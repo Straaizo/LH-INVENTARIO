@@ -6,7 +6,7 @@ Sistema de gestión de inventario desarrollado en **Flutter** para La Hornilla. 
 
 ## 🚀 Características
 
-- **🔐 Login** – Inicio de sesión con email y contraseña contra la API. Soporte de token JWT (header `Authorization: Bearer`).
+- **🔐 Login** – Inicio de sesión con email y contraseña contra la API. Soporte de token JWT.
 - **📄 Página principal** – Sidebar con navegación a Entregar, Inventario y Productos; bienvenida con nombre del usuario (obtenido desde la API).
 - **📤 Entregar** – Registrar entregas a sucursales (descuento de stock), listar entregas agrupadas por fecha/sucursal, exportar a CSV (web).
 - **📋 Inventario** – Listar stock por producto/categoría, añadir stock, editar y eliminar ítems. Indicador de stock bajo (≤ 5).
@@ -20,12 +20,11 @@ Sistema de gestión de inventario desarrollado en **Flutter** para La Hornilla. 
 
 | Área        | Tecnología                          |
 |------------|--------------------------------------|
-| Frontend   | Flutter 3.x, Dart ^3.11              |
-| HTTP       | `http`                               |
+| Frontend   | Flutter, Dart               |
 | Fuentes    | `google_fonts`                       |
 | Archivos   | `file_picker` (export CSV en web)    |
-| Backend    | API REST (Flask) – ver sección API  |
-| Hosting    | Firebase Hosting (opcional)          |
+| Backend    | API REST (Flask) – vr sección API  |
+| Hosting    | Firebase Hosting      |
 
 ---
 
@@ -35,7 +34,7 @@ Sistema de gestión de inventario desarrollado en **Flutter** para La Hornilla. 
 lib/
 ├── main.dart                    # Punto de entrada, tema Material, home: Login
 ├── config/
-│   └── api_config.dart         # URL base de la API (dev/prod), timeout
+│   └── api_config.dart         # URL base de la API (dev/prod)
 ├── services/
 │   ├── api_client.dart         # Cliente HTTP (GET/POST/PUT/DELETE), token, ApiResponse
 │   ├── login_api.dart          # Login y perfil de usuario
@@ -46,7 +45,7 @@ lib/
 │   ├── Login/
 │   │   └── Login.dart          # Pantalla de login
 │   └── Pag Principal/
-│       ├── pagina_principal.dart  # Layout, sidebar, contenido según menú
+│       ├── pagina_principal.dart  # Layout, sidebar, contenido según tamaño de pantalla.
 │       ├── entregar.dart       # Entregas + export CSV
 │       ├── inventario.dart     # Inventario
 │       └── productos.dart      # Productos
@@ -66,18 +65,6 @@ La URL base de la API se define en **`lib/config/api_config.dart`**:
 - **Desarrollo** (`flutter run`): `ApiConfig.developmentBaseUrl`
 - **Release** (ej. app desplegada): `ApiConfig.productionBaseUrl`
 
-Por defecto ambas apuntan a `http://192.168.1.225:5000`. Para producción web (HTTPS) conviene usar una URL HTTPS (ngrok o servidor con SSL).
-
-- Timeout: `ApiConfig.timeoutSeconds` (15 s).
-
-### Cliente HTTP (`api_client.dart`)
-
-- **`ApiClient`** centraliza todas las peticiones:
-  - `get(path)`, `post(path, [data])`, `put(path, [data])`, `delete(path)`
-  - Headers: `Content-Type: application/json`, `Accept: application/json`
-  - Si hay token: `Authorization: Bearer <token>` (se guarda con `ApiClient.setAuthToken(token)` tras el login)
-- **`ApiResponse`**: `ok`, `statusCode`, `data`, `message`; errores con mensaje desde el backend (`message`, `error`, `msg`).
-
 ### Endpoints utilizados
 
 | Servicio     | Ruta base                         | Uso principal                                      |
@@ -88,7 +75,7 @@ Por defecto ambas apuntan a `http://192.168.1.225:5000`. Para producción web (H
 | Inventario  | `/api/inventario_lh_toner`         | GET lista, POST añadir stock, PUT/DELETE `/:id`    |
 | Entregas    | `/api/entregar_lh_toner`           | GET lista, POST crear (descuenta stock), PUT/DELETE `/:id` |
 
-Los servicios (`login_api`, `products_api`, `inventario_api`, `entregar_api`) parsean las respuestas (listas o objetos anidados como `productos`, `data`, `items`) y devuelven modelos Dart (p. ej. `Producto`, `InventarioItem`, `EntregaItem`). Para entregas, si la cantidad supera el stock, la API puede devolver 400 con `stock_disponible` y `cantidad_solicitada`.
+Los servicios (`login_api`, `products_api`, `inventario_api`, `entregar_api`) parsean las respuestas (listas o objetos anidados como `productos`, `data`, `items`) y devuelven modelos Dart (p. ej. `Producto`, `InventarioItem`, `EntregaItem`). Para entregas, si la cantidad supera el stock, la API puede devolver 400.
 
 ---
 
@@ -141,10 +128,6 @@ La app está preparada para Firebase Hosting:
 1. `flutter build web --release`
 2. `firebase deploy`
 
-La configuración está en `firebase.json` (carpeta `build/web`, rewrites a `index.html` para SPA).  
-Pasos detallados, login en Firebase y vinculación del proyecto: **[DEPLOY_FIREBASE.md](DEPLOY_FIREBASE.md)**.
-
-**Nota:** Si la app está en `lh-toner.web.app` (HTTPS), la API en producción debe ser accesible por HTTPS (o CORS configurado según tu caso) para que login y datos funcionen correctamente.
 
 ---
 
