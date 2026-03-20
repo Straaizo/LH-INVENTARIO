@@ -7,10 +7,9 @@ Sistema de gestión de inventario desarrollado en **Flutter** para La Hornilla. 
 ## 🚀 Características
 
 - **🔐 Login** – Inicio de sesión con email y contraseña contra la API. Soporte de token JWT (header `Authorization: Bearer`).
-- **📄 Página principal** – Sidebar con Salida, Entrada, Inventario y Productos; bienvenida con nombre del usuario (obtenido desde la API).
-- **📤 Salida** – Movimientos SALIDA hacia `dim_destino`, listado agrupado por fecha/destino, exportar a CSV (web).
-- **📥 Entrada** – Movimientos ENTRADA (alta de stock): listado agrupado, registro desde `dim_producto` + destino, export CSV.
-- **📋 Inventario** – Solo consulta de stock con `GET /api/vw_stock_actual` (`data`), agrupado por categoría. El alta de stock se hace en **Entrada**.
+- **📄 Página principal** – Sidebar con navegación a Entregar, Inventario y Productos; bienvenida con nombre del usuario (obtenido desde la API).
+- **📤 Entregar** – Registrar entregas a sucursales (descuento de stock), listar entregas agrupadas por fecha/sucursal, exportar a CSV (web).
+- **📋 Inventario** – Listar stock por producto/categoría, añadir stock, editar y eliminar ítems. Indicador de stock bajo (≤ 5).
 - **📦 Productos** – CRUD de productos (nombre, categoría), listado agrupado por categoría.
 - **📱 Diseño responsive** – Sidebar fijo en escritorio y drawer en pantallas &lt; 700px.
 - **🌐 Despliegue web** – Build para web y publicación en Firebase Hosting (ej. `lh-toner.web.app`).
@@ -21,12 +20,11 @@ Sistema de gestión de inventario desarrollado en **Flutter** para La Hornilla. 
 
 | Área        | Tecnología                          |
 |------------|--------------------------------------|
-| Frontend   | Flutter 3.x, Dart ^3.11              |
-| HTTP       | `http`                               |
+| Frontend   | Flutter, Dart               |
 | Fuentes    | `google_fonts`                       |
 | Archivos   | `file_picker` (export CSV en web)    |
-| Backend    | API REST (Flask) – ver sección API  |
-| Hosting    | Firebase Hosting (opcional)          |
+| Backend    | API REST (Flask) – vr sección API  |
+| Hosting    | Firebase Hosting      |
 
 ---
 
@@ -36,7 +34,7 @@ Sistema de gestión de inventario desarrollado en **Flutter** para La Hornilla. 
 lib/
 ├── main.dart                    # Punto de entrada, tema Material, home: Login
 ├── config/
-│   └── api_config.dart         # URL base de la API (dev/prod), timeout
+│   └── api_config.dart         # URL base de la API (dev/prod)
 ├── services/
 │   ├── api_client.dart                    # Cliente HTTP (GET/POST/PUT/DELETE), token, ApiResponse
 │   ├── dim_usuario_lh_toner_api.dart      # Login y perfil (/me + /perfil)
@@ -50,8 +48,7 @@ lib/
 │   │   └── Login.dart          # Pantalla de login
 │   └── Pag Principal/
 │       ├── pagina_principal.dart  # Layout, sidebar, contenido según menú
-│       ├── salida.dart         # Movimientos salida + export CSV
-│       ├── entrada.dart        # Movimientos entrada (stock) + export CSV
+│       ├── entregar.dart       # Entregas + export CSV
 │       ├── inventario.dart     # Inventario
 │       └── productos.dart      # Productos
 └── utils/
@@ -109,31 +106,17 @@ La URL base de la API se define en **`lib/config/api_config.dart`**:
 - **Desarrollo** (`flutter run`): `ApiConfig.developmentBaseUrl`
 - **Release** (ej. app desplegada): `ApiConfig.productionBaseUrl`
 
-Por defecto ambas apuntan a `http://192.168.1.225:5000`. Para producción web (HTTPS) conviene usar una URL HTTPS (ngrok o servidor con SSL).
-
-- Timeout: `ApiConfig.timeoutSeconds` (15 s).
-
-### Cliente HTTP (`api_client.dart`)
-
-- **`ApiClient`** centraliza todas las peticiones:
-  - `get(path)`, `post(path, [data])`, `put(path, [data])`, `delete(path)`
-  - Headers: `Content-Type: application/json`, `Accept: application/json`
-  - Si hay token: `Authorization: Bearer <token>` (se guarda con `ApiClient.setAuthToken(token)` tras el login)
-- **`ApiResponse`**: `ok`, `statusCode`, `data`, `message`; errores con mensaje desde el backend (`message`, `error`, `msg`).
-
 ### Endpoints utilizados
 
 | Servicio     | Ruta base                         | Uso principal                                      |
 |-------------|------------------------------------|----------------------------------------------------|
-| Login       | `POST /api_lh_toner/login` (o `/api/dim_usuario_lh_toner/login`, `/api/usuarios_lh_toner/login`) | Body: `email`, `contrasenia` → token, `usuario` |
-| Perfil      | `GET /api/usuarios_lh_toner/perfil?email=` o `?correo=` (sin JWT) · **`GET /api/dim_usuario_lh_toner/me`** (con JWT, preferido) | `usuario` / `user` con `nombre_usuario` |
-| Categorías  | `GET /api/dim_categoria_lh_toner` | Lista para enviar **`id_categoria`** al crear productos |
-| Productos   | `/api/dim_producto_lh_toner`     | JSON recomendado: `nombre_producto` + **`id_categoria`** (del GET categorías) |
-| Stock (vista) | `/api/vw_stock_actual`         | GET `{ "data": [...] }` → **Inventario** (stock por producto) y **Entregar** (combo); JWT |
-| Destinos    | `/api/dim_destino_lh_toner`      | GET → `id_destino`, `nombre_destino`               |
-| Movimientos | `/api/fact_movimientos_lh_toner` o `/api/movimientos_lh_toner` | POST con `tipo_movimiento` ENTRADA/SALIDA, `id_producto`, `id_destino`; `.../ajuste`, `.../salidas`; PUT/DELETE por `id_movimientos` |
+| Login       | `POST /api/usuarios_lh_toner/login`| Body: `email`, `password` → token, nombre          |
+| Perfil      | `GET /api/usuarios_lh_toner/perfil?email=...` | Nombre del usuario                         |
+| Productos   | `/api/productos_lh_toner`          | GET lista, POST crear, PUT `/:id`, DELETE `/:id`  |
+| Inventario  | `/api/inventario_lh_toner`         | GET lista, POST añadir stock, PUT/DELETE `/:id`    |
+| Entregas    | `/api/entregar_lh_toner`           | GET lista, POST crear (descuenta stock), PUT/DELETE `/:id` |
 
-Contratos: **`docs/API_CONTRATO_LH_TONER.md`**, **`docs/API_BACKEND_MOVIMIENTOS.md`**. Modelos: `DimCategoriaLhToner`, `DimProductoLhToner`, `VwStockActualRow`, `DimDestinoLhTonerRow`, `FactMovimientoListadoItem` (historial si se usa), `FactMovimientoSalidaItem`. Si la cantidad de una SALIDA supera el stock, la API puede responder 400 con `stock_disponible` y `cantidad_solicitada`.
+Los servicios (`login_api`, `products_api`, `inventario_api`, `entregar_api`) parsean las respuestas (listas o objetos anidados como `productos`, `data`, `items`) y devuelven modelos Dart (p. ej. `Producto`, `InventarioItem`, `EntregaItem`). Para entregas, si la cantidad supera el stock, la API puede devolver 400 con `stock_disponible` y `cantidad_solicitada`.
 
 ---
 
@@ -186,10 +169,6 @@ La app está preparada para Firebase Hosting:
 1. `flutter build web --release`
 2. `firebase deploy`
 
-La configuración está en `firebase.json` (carpeta `build/web`, rewrites a `index.html` para SPA).  
-Pasos detallados, login en Firebase y vinculación del proyecto: **[DEPLOY_FIREBASE.md](DEPLOY_FIREBASE.md)**.
-
-**Nota:** Si la app está en `lh-toner.web.app` (HTTPS), la API en producción debe ser accesible por HTTPS (o CORS configurado según tu caso) para que login y datos funcionen correctamente.
 
 ---
 
