@@ -17,6 +17,10 @@ class ApiClient {
     _authToken = token;
   }
 
+  /// True si hay JWT guardado (p. ej. para preferir `GET .../me` frente a `/perfil?email=`).
+  static bool get hasAuthToken =>
+      _authToken != null && _authToken!.trim().isNotEmpty;
+
   static Map<String, String> get _headers {
     final h = <String, String>{
       'Content-Type': 'application/json',

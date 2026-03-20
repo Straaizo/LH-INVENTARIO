@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lh_tonner/services/products_api.dart';
+import 'package:lh_tonner/services/dim_categoria_lh_toner_api.dart';
+import 'package:lh_tonner/services/dim_producto_lh_toner_api.dart';
 
 class ProductosPage extends StatefulWidget {
   const ProductosPage({super.key});
@@ -10,28 +11,52 @@ class ProductosPage extends StatefulWidget {
 }
 
 class _ProductosPageState extends State<ProductosPage> {
-  List<Producto> productos = [];
+  List<DimProductoLhToner> productos = [];
+  List<DimCategoriaLhToner> categorias = [];
   bool _cargando = true;
 
   @override
   void initState() {
     super.initState();
     _cargarProductos();
+    _cargarCategorias();
+  }
+
+  Future<void> _cargarCategorias() async {
+    final lista = await DimCategoriaLhTonerApi.listar();
+    if (mounted) {
+      setState(() => categorias = lista);
+    }
   }
 
   Future<void> _cargarProductos() async {
     setState(() => _cargando = true);
-    final lista = await ProductsApi.listar();
-    if (mounted) setState(() {
-      productos = lista;
-      _cargando = false;
-    });
+    final lista = await DimProductoLhTonerApi.listar();
+    if (mounted) {
+      setState(() {
+        productos = lista;
+        _cargando = false;
+      });
+    }
+  }
+
+  int? _idCategoriaInicial(DimProductoLhToner? editar) {
+    if (editar == null) return categorias.isNotEmpty ? categorias.first.idCategoria : null;
+    if (editar.idCategoria != null) {
+      final existe = categorias.any((c) => c.idCategoria == editar.idCategoria);
+      if (existe) return editar.idCategoria;
+    }
+    final nom = editar.nombreCategoria.trim().toLowerCase();
+    for (final c in categorias) {
+      if (c.nombreCategoria.trim().toLowerCase() == nom) return c.idCategoria;
+    }
+    return categorias.isNotEmpty ? categorias.first.idCategoria : null;
   }
 
   @override
   Widget build(BuildContext context) {
     bool isMobile = MediaQuery.of(context).size.width < 600;
-    Map<String, List<Producto>> agrupados = {};
+    Map<String, List<DimProductoLhToner>> agrupados = {};
 
     for (var p in productos) {
       agrupados.putIfAbsent(p.categoria, () => []);
@@ -40,89 +65,83 @@ class _ProductosPageState extends State<ProductosPage> {
 
     return Column(
       children: [
-        // HEADER //
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
           child: isMobile
-
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  
-                   Text(
-                  "Productos",
-                  style: TextStyle(
-                    fontSize: 24,
-                    color: Colors.white,
-                    fontFamily: GoogleFonts.montserrat().fontFamily,
-                      ),
-                    ),
-
-                          
-                  
-                  const SizedBox(height: 15),
-
-                  Row(
-                    children: [
-
-                    Expanded(
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        
-                      ),
-                      onPressed: () {
-                       _mostrarFormularioProducto();
-                      },
-                      icon: Icon(Icons.add_outlined,
-                      color: Colors.white),
-                      label: Text("Agregar",
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Productos',
                       style: TextStyle(
+                        fontSize: 24,
                         color: Colors.white,
+                        fontFamily: GoogleFonts.montserrat().fontFamily,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Se registran los productos disponibles.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.white70,
+                        fontFamily: GoogleFonts.montserrat().fontFamily,
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                            ),
+                            onPressed: () => _mostrarFormularioProducto(),
+                            icon: const Icon(Icons.add_outlined, color: Colors.white),
+                            label: const Text('Agregar', style: TextStyle(color: Colors.white)),
+                          ),
                         ),
-                      ),
+                      ],
+                    ),
+                  ],
+                )
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Productos',
+                            style: TextStyle(
+                              fontSize: 28,
+                              color: Colors.white,
+                              fontFamily: GoogleFonts.montserrat().fontFamily,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Se registran los productos disponibles.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.white70,
+                              fontFamily: GoogleFonts.montserrat().fontFamily,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],                  
-                ),
-              ],
-            )
-
-              // VERSION DE PC //
-            : Row(
-              children: [
-
-                Text(
-                  "Productos",
-                  style: TextStyle(
-                    fontSize: 28,
-                    color: Colors.white,
-                    fontFamily: GoogleFonts.montserrat().fontFamily,
-                  ),
-                ),
-                
-                const Spacer(),
-
-                ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                      onPressed: () => _mostrarFormularioProducto(),
+                      icon: const Icon(Icons.add_outlined, color: Colors.white),
+                      label: const Text('Agregar', style: TextStyle(color: Colors.white)),
                     ),
-                  onPressed: () {
-                    _mostrarFormularioProducto();
-                  },
-                  icon: Icon(Icons.add_outlined, color: Colors.white),
-                  label: Text(
-                    "Agregar",
-                    style: TextStyle(color: Colors.white),
-                  ),
+                  ],
                 ),
-              ],
-            ),
         ),
-
-
-        // LISTA DE LOS PRODUCTOS //
-
         Expanded(
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 30),
@@ -135,18 +154,16 @@ class _ProductosPageState extends State<ProductosPage> {
                 : ListView(
                     children: agrupados.entries.map((entry) {
                       String categoria = entry.key;
-                      List<Producto> listaProductos = entry.value;
+                      List<DimProductoLhToner> listaProductos = entry.value;
 
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 15),
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                             child: Row(
                               children: [
-                                const Icon(Icons.sell_outlined,
-                                    color: Colors.orange),
+                                const Icon(Icons.sell_outlined, color: Colors.orange),
                                 const SizedBox(width: 10),
                                 Text(
                                   categoria,
@@ -154,8 +171,7 @@ class _ProductosPageState extends State<ProductosPage> {
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
-                                    fontFamily:
-                                        GoogleFonts.montserrat().fontFamily,
+                                    fontFamily: GoogleFonts.montserrat().fontFamily,
                                   ),
                                 ),
                               ],
@@ -163,10 +179,7 @@ class _ProductosPageState extends State<ProductosPage> {
                           ),
                           ...listaProductos.map((producto) {
                             return ListTile(
-                              leading: const Icon(
-                                Icons.print_outlined,
-                                color: Colors.greenAccent,
-                              ),
+                              leading: const Icon(Icons.print_outlined, color: Colors.greenAccent),
                               title: Text(
                                 producto.nombre,
                                 style: const TextStyle(color: Colors.white),
@@ -175,17 +188,12 @@ class _ProductosPageState extends State<ProductosPage> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   IconButton(
-                                    icon: const Icon(Icons.delete_outline,
-                                        color: Colors.white70),
-                                    onPressed: () =>
-                                        _confirmarEliminar(producto),
+                                    icon: const Icon(Icons.delete_outline, color: Colors.white70),
+                                    onPressed: () => _confirmarEliminar(producto),
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.edit_outlined,
-                                        color: Colors.white70),
-                                    onPressed: () =>
-                                        _mostrarFormularioProducto(
-                                            editarProducto: producto),
+                                    icon: const Icon(Icons.edit_outlined, color: Colors.white70),
+                                    onPressed: () => _mostrarFormularioProducto(editarProducto: producto),
                                   ),
                                 ],
                               ),
@@ -195,13 +203,13 @@ class _ProductosPageState extends State<ProductosPage> {
                       );
                     }).toList(),
                   ),
-            ),
           ),
-    ],
-  );
+        ),
+      ],
+    );
   }
 
-  void _confirmarEliminar(Producto producto) {
+  void _confirmarEliminar(DimProductoLhToner producto) {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -215,12 +223,15 @@ class _ProductosPageState extends State<ProductosPage> {
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              final res = await ProductsApi.eliminar(producto.idProductos);
+              final res = await DimProductoLhTonerApi.eliminar(producto.idProducto);
               if (mounted) {
-                if (res.ok) _cargarProductos();
-                else ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(res.message ?? 'Error al eliminar')),
-                );
+                if (res.ok) {
+                  _cargarProductos();
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(res.message ?? 'Error al eliminar')),
+                  );
+                }
               }
             },
             child: Text('Eliminar', style: TextStyle(color: Colors.red[700])),
@@ -230,10 +241,10 @@ class _ProductosPageState extends State<ProductosPage> {
     );
   }
 
-  void _mostrarFormularioProducto({Producto? editarProducto}) {
+  void _mostrarFormularioProducto({DimProductoLhToner? editarProducto}) {
     final esEdicion = editarProducto != null;
     final nombreController = TextEditingController(text: editarProducto?.nombre ?? '');
-    String? categoriaSeleccionada = editarProducto?.categoria;
+    int? idCategoriaSeleccionada = _idCategoriaInicial(editarProducto);
     String? nombreError;
 
     showDialog<void>(
@@ -243,9 +254,7 @@ class _ProductosPageState extends State<ProductosPage> {
         return StatefulBuilder(
           builder: (_, setStateDialog) {
             return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Container(
                 width: 400,
                 padding: const EdgeInsets.all(25),
@@ -253,33 +262,53 @@ class _ProductosPageState extends State<ProductosPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      esEdicion ? 'Editar Producto' : 'Agregar Producto',
+                      esEdicion ? 'Editar producto' : 'Agregar producto',
                       style: TextStyle(
                         fontSize: 22,
                         fontFamily: GoogleFonts.montserrat().fontFamily,
                       ),
                     ),
                     const SizedBox(height: 20),
-                    DropdownButtonFormField<String>(
-                      value: categoriaSeleccionada,
-                      hint: const Text("Seleccionar categoría"),
-                      items: const [
-                        DropdownMenuItem(value: "Tóner", child: Text("Tóner")),
-                        DropdownMenuItem(value: "Tambor", child: Text("Tambor")),
-                      ],
-                      onChanged: (value) {
-                        setStateDialog(() => categoriaSeleccionada = value);
-                      },
+                    DropdownButtonFormField<int>(
+                      value: idCategoriaSeleccionada,
+                      hint: Text(
+                        categorias.isEmpty
+                            ? 'Cargando categorías…'
+                            : 'Seleccionar categoría (id_categoria)',
+                      ),
+                      items: categorias
+                          .map(
+                            (c) => DropdownMenuItem<int>(
+                              value: c.idCategoria,
+                              child: Text(c.nombreCategoria),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: categorias.isEmpty
+                          ? null
+                          : (value) {
+                              setStateDialog(() => idCategoriaSeleccionada = value);
+                            },
                     ),
+                    if (categorias.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          'No hay categorías. Cree filas en DIM_CATEGORIA_LH_TONER o cargue GET /api/dim_categoria_lh_toner.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.orange[800],
+                            fontFamily: GoogleFonts.montserrat().fontFamily,
+                          ),
+                        ),
+                      ),
                     const SizedBox(height: 15),
                     TextField(
                       controller: nombreController,
                       onChanged: (_) => setStateDialog(() => nombreError = null),
                       decoration: InputDecoration(
-                        labelText: "Nombre del producto",
-                        errorText: nombreError == 'El producto ya existe'
-                            ? '\u200B'
-                            : nombreError,
+                        labelText: 'Nombre del producto',
+                        errorText: nombreError == 'El producto ya existe' ? '\u200B' : nombreError,
                         errorStyle: TextStyle(
                           color: Colors.red[700],
                           fontFamily: GoogleFonts.montserrat().fontFamily,
@@ -297,14 +326,10 @@ class _ProductosPageState extends State<ProductosPage> {
                     ),
                     if (nombreError == 'El producto ya existe')
                       Padding(
-                        padding: const EdgeInsets.only(top: 2.0),
+                        padding: const EdgeInsets.only(top: 2),
                         child: Row(
                           children: [
-                            Icon(
-                              Icons.warning_amber_outlined,
-                              color: Colors.red[700],
-                              size: 20,
-                            ),
+                            Icon(Icons.warning_amber_outlined, color: Colors.red[700], size: 20),
                             const SizedBox(width: 6),
                             Text(
                               'El producto ya existe',
@@ -323,7 +348,7 @@ class _ProductosPageState extends State<ProductosPage> {
                         Expanded(
                           child: OutlinedButton(
                             onPressed: () => Navigator.pop(dialogContext),
-                            child: const Text("Cancelar"),
+                            child: const Text('Cancelar'),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -331,38 +356,52 @@ class _ProductosPageState extends State<ProductosPage> {
                           child: ElevatedButton(
                             onPressed: () async {
                               final nombre = nombreController.text.trim();
-                              final categoria = categoriaSeleccionada ?? "Tóner";
+                              final idCat = idCategoriaSeleccionada;
                               if (nombre.isEmpty) {
                                 setStateDialog(() => nombreError = 'Ingrese el nombre del producto');
                                 return;
                               }
+                              if (idCat == null) {
+                                setStateDialog(
+                                  () => nombreError = 'Seleccione una categoría (id_categoria)',
+                                );
+                                return;
+                              }
                               if (esEdicion) {
-                                final yaExiste = await ProductsApi.existeNombre(
-                                    nombre, excluirId: editarProducto.idProductos);
+                                final yaExiste = await DimProductoLhTonerApi.existeNombre(
+                                  nombre,
+                                  excluirId: editarProducto.idProducto,
+                                );
                                 if (yaExiste) {
                                   setStateDialog(() => nombreError = 'El producto ya existe');
                                   return;
                                 }
-                                final res = await ProductsApi.actualizar(
-                                    editarProducto.idProductos, nombre, categoria);
+                                final res = await DimProductoLhTonerApi.actualizar(
+                                  idProducto: editarProducto.idProducto,
+                                  nombreProducto: nombre,
+                                  idCategoria: idCat,
+                                );
                                 if (!mounted) return;
                                 if (res.ok) {
                                   Navigator.pop(dialogContext);
                                   _cargarProductos();
                                 } else {
                                   final msg = res.message ?? '';
-                                  final esAuth = res.message?.toLowerCase().contains('authorization') == true ||
-                                      res.message?.contains('401') == true;
+                                  final esAuth = msg.toLowerCase().contains('authorization') ||
+                                      msg.contains('401');
                                   setStateDialog(() => nombreError =
                                       esAuth ? 'Sesión expirada o no autorizado. Inicie sesión de nuevo.' : msg);
                                 }
                               } else {
-                                final yaExiste = await ProductsApi.existeNombre(nombre);
+                                final yaExiste = await DimProductoLhTonerApi.existeNombre(nombre);
                                 if (yaExiste) {
-                                  setStateDialog(() => nombreError =  'El producto ya existe');
+                                  setStateDialog(() => nombreError = 'El producto ya existe');
                                   return;
                                 }
-                                final res = await ProductsApi.crear(nombre, categoria);
+                                final res = await DimProductoLhTonerApi.crear(
+                                  nombreProducto: nombre,
+                                  idCategoria: idCat,
+                                );
                                 if (!mounted) return;
                                 if (res.ok) {
                                   if (res.producto != null) {
@@ -373,13 +412,14 @@ class _ProductosPageState extends State<ProductosPage> {
                                 } else {
                                   final msg = res.message ?? '';
                                   final esAuth = msg.toLowerCase().contains('authorization') ||
-                                      msg.contains('401') || msg.contains('Missing');
+                                      msg.contains('401') ||
+                                      msg.contains('Missing');
                                   setStateDialog(() => nombreError =
                                       esAuth ? 'Sesión expirada o no autorizado. Inicie sesión de nuevo.' : msg);
                                 }
                               }
                             },
-                            child: const Text("Guardar"),
+                            child: const Text('Guardar'),
                           ),
                         ),
                       ],

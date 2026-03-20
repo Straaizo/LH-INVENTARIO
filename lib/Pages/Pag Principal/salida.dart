@@ -7,54 +7,74 @@ import 'package:flutter/material.dart';
 import 'package:lh_tonner/utils/descarga_csv_stub.dart'
     if (dart.library.html) 'package:lh_tonner/utils/descarga_csv_web.dart' as descarga_csv;
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lh_tonner/services/entregar_api.dart';
-import 'package:lh_tonner/services/inventario_api.dart';
+import 'package:lh_tonner/services/dim_destino_lh_toner_api.dart';
+import 'package:lh_tonner/services/dim_tipo_movimiento_lh_toner_api.dart';
+import 'package:lh_tonner/services/dim_usuario_lh_toner_api.dart';
+import 'package:lh_tonner/services/fact_movimientos_lh_toner_api.dart';
+import 'package:lh_tonner/services/vw_stock_actual_api.dart';
 
-class EntregarPage extends StatefulWidget {
-  const EntregarPage({super.key});
+class SalidaPage extends StatefulWidget {
+  const SalidaPage({super.key});
 
   @override
-  State<EntregarPage> createState() => _EntregarPageState();
+  State<SalidaPage> createState() => _SalidaPageState();
 }
 
-class _EntregarPageState extends State<EntregarPage> {
-  List<EntregaItem> entregas = [];
+class _SalidaPageState extends State<SalidaPage> {
+  List<FactMovimientoSalidaItem> salidas = [];
   bool _cargando = true;
+  /// `id_usuario` → nombre para mostrar (desde `GET /api/dim_usuario_lh_toner`).
+  Map<int, String> _nombresPorUsuarioId = {};
 
-  static const List<String> solicitantes = [
-    'Oficina Central',
-    'Santa Victoria',
-    'Cullipeumo',
-    'Hospital',
-    'Santa Inés',
-    'Maitén',
-    'San Manuel',
-    'Itahue',
-  ];
+  /// Incrementa tras guardar salida para forzar nuevo `GET /api/vw_stock_actual` al reabrir el modal.
+  int _vwStockRefreshToken = 0;
 
   @override
   void initState() {
     super.initState();
-    _cargarEntregas();
+    _cargarSalidas();
   }
 
-  Future<void> _cargarEntregas() async {
+  Future<void> _cargarSalidas() async {
     setState(() => _cargando = true);
-    final lista = await EntregarApi.listar();
+    final lista = await FactMovimientosLhTonerApi.listarSalidas();
+    final mapaNombres = await DimUsuarioLhTonerApi.mapaNombresParaMostrarPorId();
     if (mounted) {
       setState(() {
-        entregas = lista;
+        salidas = lista;
+        _nombresPorUsuarioId = mapaNombres;
         _cargando = false;
       });
     }
   }
 
-  /// Agrupa entregas por fecha (solo dia) y sucursal para mostrar en una sola fila.
-  List<List<EntregaItem>> _entregasAgrupadas() {
-    final Map<String, List<EntregaItem>> grupos = {};
-    for (final e in entregas) {
-      final fechaNorm = _fechaParaGrupo(e.fecha);
-      final key = '$fechaNorm|${e.nombreSucursal}';
+  /// Nombre para mostrar (columna `nombre` en dim_usuario); si no hay mapa, el login.
+  String _nombreUsuarioMovimiento(FactMovimientoSalidaItem e) {
+    final id = e.idUsuario;
+    if (id != null) {
+      final n = _nombresPorUsuarioId[id];
+      if (n != null && n.isNotEmpty) return n;
+    }
+    return (e.usuarioNombre ?? '').trim();
+  }
+
+  /// Stock (vista SQL) + destinos + id tipo "Salida" (dim) para POST.
+  static Future<List<Object?>> _cargarStockYDestinos() async {
+    final tipos = await DimTipoMovimientoLhTonerApi.listar();
+    final idSalida = DimTipoMovimientoLhTonerApi.idParaSalida(tipos);
+    return [
+      await VwStockActualApi.listar(),
+      await DimDestinoLhTonerApi.listar(),
+      idSalida,
+    ];
+  }
+
+  /// Agrupa salidas por **momento exacto** (fecha+hora+segundo) y sucursal.
+  /// Así 9:56 y 9:58 son filas distintas; varios productos del mismo envío (misma `fecha` en BD) siguen en una fila.
+  List<List<FactMovimientoSalidaItem>> _salidasAgrupadas() {
+    final Map<String, List<FactMovimientoSalidaItem>> grupos = {};
+    for (final e in salidas) {
+      final key = '${_claveAgrupacionMomento(e.fecha)}|${e.nombreDestino}';
       grupos.putIfAbsent(key, () => []).add(e);
     }
     final lista = grupos.values.toList();
@@ -69,11 +89,13 @@ class _EntregarPageState extends State<EntregarPage> {
     return lista;
   }
 
-  String _fechaParaGrupo(String fecha) {
-    if (fecha.isEmpty) return fecha;
+  /// Clave única por instante (y fallback si el texto no parsea).
+  String _claveAgrupacionMomento(String fecha) {
+    if (fecha.isEmpty) return '';
     final d = DateTime.tryParse(fecha);
     if (d == null) return fecha;
-    return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${d.year}-${two(d.month)}-${two(d.day)} ${two(d.hour)}:${two(d.minute)}:${two(d.second)}';
   }
 
   /// Escapa un campo CSV (usa punto y coma como separador).
@@ -86,16 +108,16 @@ class _EntregarPageState extends State<EntregarPage> {
   }
 
   Future<void> _descargarExcel() async {
-    if (entregas.isEmpty) {
+    if (salidas.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No hay entregas para exportar')),
+        const SnackBar(content: Text('No hay salidas para exportar')),
       );
       return;
     }
     final sb = StringBuffer();
     sb.write('\uFEFF'); // BOM UTF-8 para que Excel abra bien acentos
     sb.writeln('Fecha y hora;Sucursal;Producto;Cantidad;Entregado por');
-    final ordenadas = List<EntregaItem>.from(entregas)
+    final ordenadas = List<FactMovimientoSalidaItem>.from(salidas)
       ..sort((a, b) {
         final da = DateTime.tryParse(a.fecha);
         final db = DateTime.tryParse(b.fecha);
@@ -105,15 +127,15 @@ class _EntregarPageState extends State<EntregarPage> {
     for (final e in ordenadas) {
       sb.writeln(
         '${_csvCampo(_formatearFechahora(e.fecha))};'
-        '${_csvCampo(e.nombreSucursal)};'
-        '${_csvCampo(e.inventarioNombre)};'
+        '${_csvCampo(e.nombreDestino)};'
+        '${_csvCampo(e.productoNombre)};'
         '${e.cantidad};'
-        '${_csvCampo(e.usuarioNombre)}',
+        '${_csvCampo(_nombreUsuarioMovimiento(e))}',
       );
     }
     final csv = sb.toString();
     final bytes = Uint8List.fromList(utf8.encode(csv));
-    final nombre = 'entregas_${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}.csv';
+    final nombre = 'salidas_${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}.csv';
 
     if (kIsWeb) {
       descarga_csv.descargarCsvWeb(bytes, nombre);
@@ -153,16 +175,25 @@ class _EntregarPageState extends State<EntregarPage> {
         return Column(
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 40),
+              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
               child: isMobile
                   ? Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Entregar',
+                          'Salida',
                           style: TextStyle(
                             fontSize: 28,
                             color: Colors.white,
+                            fontFamily: GoogleFonts.montserrat().fontFamily,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Registrar una salida de stock.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.white70,
                             fontFamily: GoogleFonts.montserrat().fontFamily,
                           ),
                         ),
@@ -183,7 +214,7 @@ class _EntregarPageState extends State<EntregarPage> {
                             Expanded(
                               child: ElevatedButton.icon(
                                 style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                                onPressed: () => _mostrarFormularioEntregar(),
+                                onPressed: () => _mostrarFormularioSalida(),
                                 icon: const Icon(Icons.add_outlined, color: Colors.white),
                                 label: const Text('Agregar', style: TextStyle(color: Colors.white)),
                               ),
@@ -192,17 +223,36 @@ class _EntregarPageState extends State<EntregarPage> {
                         ),
                       ],
                     )
+
+                    // VERSION DE PC //
                   : Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(
-                          'Entregar',
-                          style: TextStyle(
-                            fontSize: 28,
-                            color: Colors.white,
-                            fontFamily: GoogleFonts.montserrat().fontFamily,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Salida',
+                                style: TextStyle(
+                                  fontSize: 28,
+                                  color: Colors.white,
+                                  fontFamily: GoogleFonts.montserrat().fontFamily,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Registrar una salida de stock.',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.white70,
+                                  fontFamily: GoogleFonts.montserrat().fontFamily,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const Spacer(),
                         ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(backgroundColor: Colors.green[900]),
                           onPressed: _descargarExcel,
@@ -212,7 +262,7 @@ class _EntregarPageState extends State<EntregarPage> {
                         const SizedBox(width: 15),
                         ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                          onPressed: () => _mostrarFormularioEntregar(),
+                          onPressed: () => _mostrarFormularioSalida(),
                           icon: const Icon(Icons.add_outlined, color: Colors.white),
                           label: const Text('Agregar', style: TextStyle(color: Colors.white)),
                         ),
@@ -230,12 +280,13 @@ class _EntregarPageState extends State<EntregarPage> {
                 child: _cargando
                     ? const Center(child: CircularProgressIndicator(color: Colors.white70))
                     : ListView.builder(
-                        itemCount: _entregasAgrupadas().length,
+                        itemCount: _salidasAgrupadas().length,
                         itemBuilder: (context, index) {
-                          final grupo = _entregasAgrupadas()[index];
+                          final grupo = _salidasAgrupadas()[index];
                           final primera = grupo.first;
                           final textoProductos = grupo.map((e) => e.displayProducto).join(' - ');
-                          final subtitulo = '${primera.nombreSucursal} - $textoProductos';
+                          final subtitulo = '${primera.nombreDestino} - $textoProductos';
+                          final nombreUsuario = _nombreUsuarioMovimiento(primera);
                           return ListTile(
                             title: Text(
                               _formatearFechahora(primera.fecha),
@@ -249,11 +300,11 @@ class _EntregarPageState extends State<EntregarPage> {
                                   subtitulo,
                                   style: const TextStyle(color: Colors.white70),
                                 ),
-                                if (primera.usuarioNombre != null && primera.usuarioNombre!.isNotEmpty)
+                                if (nombreUsuario.isNotEmpty)
                                   Padding(
                                     padding: const EdgeInsets.only(top: 4),
                                     child: Text(
-                                      'Entregado por: ${primera.usuarioNombre}',
+                                      'Entregado por: $nombreUsuario',
                                       style: TextStyle(
                                         color: Colors.white54,
                                         fontSize: 12,
@@ -301,15 +352,16 @@ class _EntregarPageState extends State<EntregarPage> {
     return fecha;
   }
 
-  void _mostrarFormularioEntregar() {
+  void _mostrarFormularioSalida() {
     showDialog<void>(
       context: context,
       barrierColor: Colors.black54,
       builder: (dialogContext) {
         return Dialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: FutureBuilder<List<InventarioItem>>(
-            future: InventarioApi.listar(),
+          child: FutureBuilder<List<Object?>>(
+            key: ValueKey(_vwStockRefreshToken),
+            future: _SalidaPageState._cargarStockYDestinos(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Padding(
@@ -319,27 +371,35 @@ class _EntregarPageState extends State<EntregarPage> {
                     children: [
                       CircularProgressIndicator(),
                       SizedBox(height: 16),
-                      Text('Cargando inventario...'),
+                      Text('Cargando stock, destinos y tipos de movimiento...'),
                     ],
                   ),
                 );
               }
-              final inventario = snapshot.data ?? [];
-              if (inventario.isEmpty) {
+              final stock = (snapshot.data != null && snapshot.data!.isNotEmpty)
+                  ? snapshot.data![0] as List<VwStockActualRow>
+                  : <VwStockActualRow>[];
+              final destinos = (snapshot.data != null && snapshot.data!.length > 1)
+                  ? snapshot.data![1] as List<DimDestinoLhTonerRow>
+                  : <DimDestinoLhTonerRow>[];
+              final idTipoSalida = (snapshot.data != null && snapshot.data!.length > 2)
+                  ? snapshot.data![2] as int?
+                  : null;
+              if (stock.isEmpty) {
                 return Padding(
                   padding: const EdgeInsets.all(25),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Registrar Entrega',
+                        'Registrar salida',
                         style: TextStyle(
                           fontSize: 22,
                           fontFamily: GoogleFonts.montserrat().fontFamily,
                         ),
                       ),
                       const SizedBox(height: 20),
-                      const Text('No hay productos en inventario. Agregue stock primero.'),
+                      const Text('No hay stock en la vista (vw_stock_actual). Agregue stock en la sección Entrada.'),
                       const SizedBox(height: 20),
                       TextButton(
                         onPressed: () => Navigator.pop(dialogContext),
@@ -349,11 +409,64 @@ class _EntregarPageState extends State<EntregarPage> {
                   ),
                 );
               }
-              return _FormularioEntrega(
-                inventario: inventario,
-                solicitantes: solicitantes,
+              if (destinos.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.all(25),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Registrar salida',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontFamily: GoogleFonts.montserrat().fontFamily,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      const Text('No hay destinos/sucursales (dim_destino). Configure GET /api/destinos_lh_toner.'),
+                      const SizedBox(height: 20),
+                      TextButton(
+                        onPressed: () => Navigator.pop(dialogContext),
+                        child: const Text('Cerrar'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              if (idTipoSalida == null) {
+                return Padding(
+                  padding: const EdgeInsets.all(25),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Registrar salida',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontFamily: GoogleFonts.montserrat().fontFamily,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'No se encontró el tipo de movimiento "Salida" en '
+                        'GET /api/dim_tipo_movimiento_lh_toner. Revise DIM_TIPO_MOVIMIENTO_LH_TONER.',
+                      ),
+                      const SizedBox(height: 20),
+                      TextButton(
+                        onPressed: () => Navigator.pop(dialogContext),
+                        child: const Text('Cerrar'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              return _FormularioSalida(
+                stockLines: stock,
+                destinos: destinos,
+                idTipoMovSalida: idTipoSalida,
                 onExito: () {
-                  _cargarEntregas();
+                  _cargarSalidas();
+                  setState(() => _vwStockRefreshToken++);
                   Navigator.pop(dialogContext);
                 },
                 onCancelar: () => Navigator.pop(dialogContext),
@@ -366,15 +479,16 @@ class _EntregarPageState extends State<EntregarPage> {
     );
   }
 
-  void _mostrarEditarEntrega(EntregaItem item) {
+  void _mostrarEditarSalida(FactMovimientoSalidaItem item) {
     showDialog<void>(
       context: context,
       barrierColor: Colors.black54,
       builder: (dialogContext) {
         return Dialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: FutureBuilder<List<InventarioItem>>(
-            future: InventarioApi.listar(),
+          child: FutureBuilder<List<Object?>>(
+            key: ValueKey(_vwStockRefreshToken),
+            future: _SalidaPageState._cargarStockYDestinos(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Padding(
@@ -389,14 +503,22 @@ class _EntregarPageState extends State<EntregarPage> {
                   ),
                 );
               }
-              final inventario = snapshot.data ?? [];
-              if (inventario.isEmpty) {
+              final stock = (snapshot.data != null && snapshot.data!.isNotEmpty)
+                  ? snapshot.data![0] as List<VwStockActualRow>
+                  : <VwStockActualRow>[];
+              final destinos = (snapshot.data != null && snapshot.data!.length > 1)
+                  ? snapshot.data![1] as List<DimDestinoLhTonerRow>
+                  : <DimDestinoLhTonerRow>[];
+              final idTipoSalida = (snapshot.data != null && snapshot.data!.length > 2)
+                  ? snapshot.data![2] as int?
+                  : null;
+              if (stock.isEmpty || destinos.isEmpty) {
                 return Padding(
                   padding: const EdgeInsets.all(25),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text('No hay inventario disponible.'),
+                      const Text('No hay datos de stock o destinos.'),
                       const SizedBox(height: 16),
                       TextButton(
                         onPressed: () => Navigator.pop(dialogContext),
@@ -406,12 +528,14 @@ class _EntregarPageState extends State<EntregarPage> {
                   ),
                 );
               }
-              return _FormularioEntrega(
-                inventario: inventario,
-                solicitantes: solicitantes,
-                entregaExistente: item,
+              return _FormularioSalida(
+                stockLines: stock,
+                destinos: destinos,
+                idTipoMovSalida: idTipoSalida,
+                movimientoExistente: item,
                 onExito: () {
-                  _cargarEntregas();
+                  _cargarSalidas();
+                  setState(() => _vwStockRefreshToken++);
                   Navigator.pop(dialogContext);
                 },
                 onCancelar: () => Navigator.pop(dialogContext),
@@ -424,13 +548,13 @@ class _EntregarPageState extends State<EntregarPage> {
     );
   }
 
-  void _confirmarEliminar(EntregaItem item) {
+  void _confirmarEliminar(FactMovimientoSalidaItem item) {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Eliminar entrega'),
+        title: const Text('Eliminar salida'),
         content: Text(
-          '¿Eliminar entrega a "${item.nombreSucursal}" - ${item.displayProducto}? Se restaurará el stock en inventario.',
+          '¿Eliminar salida a "${item.nombreDestino}" - ${item.displayProducto}? Se restaurará el stock en inventario.',
         ),
         actions: [
           TextButton(
@@ -440,10 +564,11 @@ class _EntregarPageState extends State<EntregarPage> {
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              final res = await EntregarApi.eliminar(item.idEntrega);
+              final res = await FactMovimientosLhTonerApi.eliminar(item.idMovimiento);
               if (!mounted) return;
               if (res.ok) {
-                _cargarEntregas();
+                _cargarSalidas();
+                setState(() => _vwStockRefreshToken++);
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text(res.message ?? 'Error al eliminar')),
@@ -457,15 +582,15 @@ class _EntregarPageState extends State<EntregarPage> {
     );
   }
 
-  void _mostrarEditarGrupo(List<EntregaItem> grupo) {
+  void _mostrarEditarGrupo(List<FactMovimientoSalidaItem> grupo) {
     if (grupo.length == 1) {
-      _mostrarEditarEntrega(grupo.first);
+      _mostrarEditarSalida(grupo.first);
       return;
     }
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Editar entrega'),
+        title: const Text('Editar salida'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -478,7 +603,7 @@ class _EntregarPageState extends State<EntregarPage> {
                     trailing: const Icon(Icons.edit_outlined, size: 20),
                     onTap: () {
                       Navigator.pop(ctx);
-                      _mostrarEditarEntrega(item);
+                      _mostrarEditarSalida(item);
                     },
                   )),
             ],
@@ -494,18 +619,19 @@ class _EntregarPageState extends State<EntregarPage> {
     );
   }
 
-  void _confirmarEliminarGrupo(List<EntregaItem> grupo) {
+  void _confirmarEliminarGrupo(List<FactMovimientoSalidaItem> grupo) {
     if (grupo.length == 1) {
       _confirmarEliminar(grupo.first);
       return;
     }
-    final texto = grupo.map((e) => e.displayProducto).join(', ');
+    final primera = grupo.first;
+    final textoLinea = grupo.map((e) => e.displayProducto).join(' - ');
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Eliminar entregas'),
+        title: const Text('Eliminar salida'),
         content: Text(
-          'Se eliminarán ${grupo.length} entregas ($texto). Se restaurará el stock de todos. ¿Continuar?',
+          '¿Eliminar salida a "${primera.nombreDestino} - $textoLinea"? Se restaurará el stock en inventario.',
         ),
         actions: [
           TextButton(
@@ -516,10 +642,11 @@ class _EntregarPageState extends State<EntregarPage> {
             onPressed: () async {
               Navigator.pop(ctx);
               for (final item in grupo) {
-                await EntregarApi.eliminar(item.idEntrega);
+                await FactMovimientosLhTonerApi.eliminar(item.idMovimiento);
                 if (!mounted) return;
               }
-              _cargarEntregas();
+              _cargarSalidas();
+              setState(() => _vwStockRefreshToken++);
             },
             child: const Text('Eliminar todo'),
           ),
@@ -529,35 +656,38 @@ class _EntregarPageState extends State<EntregarPage> {
   }
 }
 
-class _FormularioEntrega extends StatefulWidget {
-  const _FormularioEntrega({
-    required this.inventario,
-    required this.solicitantes,
+class _FormularioSalida extends StatefulWidget {
+  const _FormularioSalida({
+    required this.stockLines,
+    required this.destinos,
+    this.idTipoMovSalida,
     required this.onExito,
     required this.onCancelar,
     required this.dialogContext,
-    this.entregaExistente,
+    this.movimientoExistente,
   });
 
-  final List<InventarioItem> inventario;
-  final List<String> solicitantes;
+  final List<VwStockActualRow> stockLines;
+  final List<DimDestinoLhTonerRow> destinos;
+  /// Obligatorio para registrar nueva salida; puede ser null al editar (solo PUT).
+  final int? idTipoMovSalida;
   final VoidCallback onExito;
   final VoidCallback onCancelar;
   final BuildContext dialogContext;
-  final EntregaItem? entregaExistente;
+  final FactMovimientoSalidaItem? movimientoExistente;
 
   @override
-  State<_FormularioEntrega> createState() => _FormularioEntregaState();
+  State<_FormularioSalida> createState() => _FormularioSalidaState();
 }
 
 class _FilaProducto {
-  _FilaProducto({this.idInventario}) : cantidadController = TextEditingController();
-  int? idInventario;
+  _FilaProducto({this.idProducto}) : cantidadController = TextEditingController();
+  int? idProducto;
   final TextEditingController cantidadController;
 }
 
-class _FormularioEntregaState extends State<_FormularioEntrega> {
-  String? _sucursalSeleccionada;
+class _FormularioSalidaState extends State<_FormularioSalida> {
+  int? _destinoIdSeleccionado;
   final List<_FilaProducto> _filasProducto = [];
   String? _errorStock;
   int? _errorFilaIndex;
@@ -565,15 +695,24 @@ class _FormularioEntregaState extends State<_FormularioEntrega> {
   @override
   void initState() {
     super.initState();
-    if (widget.entregaExistente != null) {
-      final e = widget.entregaExistente!;
-      _sucursalSeleccionada = e.nombreSucursal;
-      _filasProducto.add(_FilaProducto(idInventario: e.fkIdInventario)
+    if (widget.movimientoExistente != null) {
+      final e = widget.movimientoExistente!;
+      _destinoIdSeleccionado = e.destinoId;
+      if (_destinoIdSeleccionado == null) {
+        for (final d in widget.destinos) {
+          if (d.nombre == e.nombreDestino) {
+            _destinoIdSeleccionado = d.id;
+            break;
+          }
+        }
+      }
+      _destinoIdSeleccionado ??= widget.destinos.isNotEmpty ? widget.destinos.first.id : null;
+      _filasProducto.add(_FilaProducto(idProducto: e.idProducto)
         ..cantidadController.text = e.cantidad.toString());
     } else {
-      if (widget.solicitantes.isNotEmpty) _sucursalSeleccionada = widget.solicitantes.first;
-      if (widget.inventario.isNotEmpty) {
-        _filasProducto.add(_FilaProducto(idInventario: widget.inventario.first.idInventario));
+      if (widget.destinos.isNotEmpty) _destinoIdSeleccionado = widget.destinos.first.id;
+      if (widget.stockLines.isNotEmpty) {
+        _filasProducto.add(_FilaProducto(idProducto: widget.stockLines.first.idProducto));
       } else {
         _filasProducto.add(_FilaProducto());
       }
@@ -588,8 +727,8 @@ class _FormularioEntregaState extends State<_FormularioEntrega> {
 
   void _agregarOtraFila() {
     setState(() {
-      final id = widget.inventario.isNotEmpty ? widget.inventario.first.idInventario : null;
-      _filasProducto.add(_FilaProducto(idInventario: id));
+      final id = widget.stockLines.isNotEmpty ? widget.stockLines.first.idProducto : null;
+      _filasProducto.add(_FilaProducto(idProducto: id));
       _errorStock = null;
       _errorFilaIndex = null;
     });
@@ -607,7 +746,7 @@ class _FormularioEntregaState extends State<_FormularioEntrega> {
 
   @override
   Widget build(BuildContext context) {
-    final esEdicion = widget.entregaExistente != null;
+    final esEdicion = widget.movimientoExistente != null;
 
     return Container(
       width: 500,
@@ -617,7 +756,7 @@ class _FormularioEntregaState extends State<_FormularioEntrega> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              esEdicion ? 'Editar Entrega' : 'Registrar Entrega',
+              esEdicion ? 'Editar salida' : 'Registrar salida',
               style: TextStyle(
                 fontSize: 22,
                 fontFamily: GoogleFonts.montserrat().fontFamily,
@@ -625,17 +764,17 @@ class _FormularioEntregaState extends State<_FormularioEntrega> {
             ),
             const SizedBox(height: 20),
 
-            DropdownButtonFormField<String>(
-              value: _sucursalSeleccionada,
+            DropdownButtonFormField<int>(
+              value: _destinoIdSeleccionado,
               decoration: const InputDecoration(
-                labelText: 'Sucursal / Solicitante',
+                labelText: 'Sucursal / Destino',
                 border: OutlineInputBorder(),
               ),
-              hint: const Text('Seleccionar solicitante'),
-              items: widget.solicitantes
-                  .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+              hint: const Text('Seleccionar destino'),
+              items: widget.destinos
+                  .map((d) => DropdownMenuItem(value: d.id, child: Text(d.nombre)))
                   .toList(),
-              onChanged: (value) => setState(() => _sucursalSeleccionada = value),
+              onChanged: (value) => setState(() => _destinoIdSeleccionado = value),
             ),
             const SizedBox(height: 20),
 
@@ -653,21 +792,21 @@ class _FormularioEntregaState extends State<_FormularioEntrega> {
                     Expanded(
                       flex: 2,
                       child: DropdownButtonFormField<int>(
-                        value: fila.idInventario,
+                        value: fila.idProducto,
                         decoration: InputDecoration(
                           labelText: 'Producto',
                           border: const OutlineInputBorder(),
                           errorText: tieneError && _errorStock != null ? '' : null,
                         ),
                         hint: const Text('Seleccionar'),
-                        items: widget.inventario
-                            .map((inv) => DropdownMenuItem<int>(
-                                  value: inv.idInventario,
-                                  child: Text('${inv.displayNombre} (stock: ${inv.cantidad})'),
+                        items: widget.stockLines
+                            .map((s) => DropdownMenuItem<int>(
+                                  value: s.idProducto,
+                                  child: Text('${s.displayNombre} (stock: ${s.stockActual})'),
                                 ))
                             .toList(),
                         onChanged: (value) => setState(() {
-                          fila.idInventario = value;
+                          fila.idProducto = value;
                           _errorStock = null;
                           _errorFilaIndex = null;
                         }),
@@ -768,19 +907,18 @@ class _FormularioEntregaState extends State<_FormularioEntrega> {
       _errorFilaIndex = null;
     });
 
-    final sucursal = _sucursalSeleccionada?.trim();
-    if (sucursal == null || sucursal.isEmpty) {
+    if (_destinoIdSeleccionado == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Seleccione sucursal / solicitante')),
+        const SnackBar(content: Text('Seleccione sucursal / destino')),
       );
       return;
     }
 
-    if (widget.entregaExistente != null) {
+    if (widget.movimientoExistente != null) {
       final fila = _filasProducto.single;
-      if (fila.idInventario == null) {
+      if (fila.idProducto == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Seleccione un producto del inventario')),
+          const SnackBar(content: Text('Seleccione un producto')),
         );
         return;
       }
@@ -791,10 +929,10 @@ class _FormularioEntregaState extends State<_FormularioEntrega> {
         );
         return;
       }
-      final res = await EntregarApi.actualizar(
-        widget.entregaExistente!.idEntrega,
-        nombreSucursal: sucursal,
-        idInventario: fila.idInventario,
+      final res = await FactMovimientosLhTonerApi.actualizarSalida(
+        widget.movimientoExistente!.idMovimiento,
+        idDestino: _destinoIdSeleccionado,
+        idProducto: fila.idProducto,
         cantidad: cantidad,
       );
       if (!mounted) return;
@@ -818,7 +956,7 @@ class _FormularioEntregaState extends State<_FormularioEntrega> {
 
     for (var i = 0; i < _filasProducto.length; i++) {
       final fila = _filasProducto[i];
-      if (fila.idInventario == null) {
+      if (fila.idProducto == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Seleccione producto en todas las filas')),
         );
@@ -833,19 +971,30 @@ class _FormularioEntregaState extends State<_FormularioEntrega> {
       }
     }
 
+    final idTipo = widget.idTipoMovSalida;
+    if (idTipo == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tipo de movimiento "Salida" no disponible. Recargue o revise la API.'),
+        ),
+      );
+      return;
+    }
+
     for (var i = 0; i < _filasProducto.length; i++) {
       final fila = _filasProducto[i];
       final cantidad = int.tryParse(fila.cantidadController.text.trim()) ?? 0;
-      final res = await EntregarApi.crear(
-        nombreSucursal: sucursal,
-        idInventario: fila.idInventario!,
+      final res = await FactMovimientosLhTonerApi.salida(
+        idProducto: fila.idProducto!,
         cantidad: cantidad,
+        idDestino: _destinoIdSeleccionado!,
+        idTipoMov: idTipo,
       );
       if (!mounted) return;
       if (!res.ok) {
         if (res.errorStock != null) {
-          final inv = widget.inventario
-              .where((x) => x.idInventario == fila.idInventario)
+          final inv = widget.stockLines
+              .where((x) => x.idProducto == fila.idProducto)
               .firstOrNull;
           final nombreProd = inv?.displayNombre ?? 'Producto';
           setState(() {
@@ -856,7 +1005,7 @@ class _FormularioEntregaState extends State<_FormularioEntrega> {
           });
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(res.message ?? 'Error al registrar entrega')),
+            SnackBar(content: Text(res.message ?? 'Error al registrar salida')),
           );
         }
         return;

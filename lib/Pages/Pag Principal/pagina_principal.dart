@@ -1,11 +1,12 @@
 import 'dart:ui';
 import 'package:lh_tonner/Pages/Login/Login.dart';
 import 'package:lh_tonner/services/api_client.dart';
-import 'package:lh_tonner/services/login_api.dart';
+import 'package:lh_tonner/services/dim_usuario_lh_toner_api.dart';
 
-import 'entregar.dart';
+import 'entrada.dart';
 import 'inventario.dart';
 import 'productos.dart';
+import 'salida.dart';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -24,21 +25,26 @@ class PaginaPrincipal extends StatefulWidget {
 }
 
 class _PaginaPrincipal extends State<PaginaPrincipal> {
-  String _SelectedMenu = "";
+  String _SelectedMenu = "Salida";
   late String _nombreEnHeader;
 
   @override
   void initState() {
     super.initState();
     _nombreEnHeader = widget.nombreUsuario;
-    if (widget.email != null && widget.email!.trim().isNotEmpty) {
+    // Con JWT: refrescar nombre desde /me (incluye `usuario.nombre`). Con correo: perfil por email.
+    if (ApiClient.hasAuthToken ||
+        (widget.email != null && widget.email!.trim().isNotEmpty)) {
       _cargarNombreDesdeApi();
     }
   }
 
   Future<void> _cargarNombreDesdeApi() async {
-    final nombre = await LoginApi.obtenerNombreUsuario(widget.email!);
-    if (mounted) setState(() => _nombreEnHeader = nombre);
+    final nombre = await DimUsuarioLhTonerApi.obtenerNombreUsuario(widget.email ?? '');
+    if (!mounted) return;
+    if (nombre.isNotEmpty && nombre != 'Usuario') {
+      setState(() => _nombreEnHeader = nombre);
+    }
   }
 
 
@@ -224,14 +230,16 @@ class _PaginaPrincipal extends State<PaginaPrincipal> {
  
  Widget _buildContent() {
     switch (_SelectedMenu) {
-      case "Entregar":
-        return const EntregarPage();
+      case "Salida":
+        return const SalidaPage();
+      case "Entrada":
+        return const EntradaPage();
       case "Inventario":
         return const InventarioPage();
       case "Productos":
         return const ProductosPage();
       default:
-        return const EntregarPage();
+        return const SalidaPage();
     }
   }
  
@@ -248,7 +256,9 @@ Widget _sidebarItems() {
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
 
-        _buildItem("Entregar", Icons.shopping_cart_outlined),
+        _buildItem("Salida", Icons.outbox_outlined),
+        const SizedBox(height: 25),
+        _buildItem("Entrada", Icons.move_to_inbox_outlined),
         const SizedBox(height: 25),
         _buildItem("Inventario", Icons.inventory_outlined),
         const SizedBox(height: 25),
