@@ -1,99 +1,97 @@
 # 📦 LH Toner – Sistema de Inventario
 
-Sistema de gestión de inventario desarrollado en **Flutter** para La Hornilla. Permite administrar productos, stock e inventario y registrar entregas a sucursales, con autenticación y comunicación con una API REST (Flask).
+Sistema de gestión de inventario desarrollado en **Flutter** para La Hornilla. Permite administrar **productos**, consultar **stock** (**Inventario**), registrar **entradas** de mercadería y **salidas** hacia sucursales/destinos, con autenticación y comunicación con una **API REST (Flask)**.
+
+> **Backend:** el código del servidor suele vivir en la carpeta hermana **`API-LH-TONER`** (mismo workspace). Este README describe sobre todo el **frontend** (`lh_tonner`).
 
 ---
 
 ## 🚀 Características
 
-- **🔐 Login** – Inicio de sesión con email y contraseña contra la API. Soporte de token JWT (header `Authorization: Bearer`).
-- **📄 Página principal** – Sidebar con navegación a Entregar, Inventario y Productos; bienvenida con nombre del usuario (obtenido desde la API).
-- **📤 Entregar** – Registrar entregas a sucursales (descuento de stock), listar entregas agrupadas por fecha/sucursal, exportar a CSV (web).
-- **📋 Inventario** – Listar stock por producto/categoría, añadir stock, editar y eliminar ítems. Indicador de stock bajo (≤ 5).
-- **📦 Productos** – CRUD de productos (nombre, categoría), listado agrupado por categoría.
-- **📱 Diseño responsive** – Sidebar fijo en escritorio y drawer en pantallas &lt; 700px.
-- **🌐 Despliegue web** – Build para web y publicación en Firebase Hosting (ej. `lh-toner.web.app`).
+- **🔐 Login** – Inicio de sesión con **correo o nombre de usuario** y contraseña. La app envía varias claves compatibles (`correo`, `email`, `nombre_usuario`, `contrasenia`, `password`, etc.). Tras el login se usa **JWT** en el header `Authorization: Bearer`. La API puede devolver códigos de error por campo (`USER_NOT_FOUND`, `WRONG_PASSWORD`, `INVALID_EMAIL`, …) para mostrar mensajes en el formulario.
+- **📄 Página principal** – Sidebar (escritorio) o **drawer** (ancho &lt; 700px): **Salida**, **Entrada**, **Inventario**, **Productos**, **Salir**; bienvenida con **nombre** del usuario (desde `/me` con JWT o perfil por correo).
+- **📤 Salida** – Registrar movimientos de **salida** (descuento de stock hacia un destino), listar historial **agrupado** (fecha/hora y destino), exportar a **CSV** en web (`file_picker` + descarga en navegador).
+- **📥 Entrada** – Registrar **entradas** de stock, listado agrupado, exportación **CSV** en web (misma mecánica que Salida).
+- **📋 Inventario** – Vista de **stock actual** desde la API/vista SQL `vw_stock_actual`, listado **agrupado por categoría** (refuerzo con datos de `dim_producto`). **No** incluye “agregar stock” desde esta pantalla: el stock se refleja vía movimientos en **Entrada** / **Salida** (y la vista en BD).
+- **📦 Productos** – CRUD de productos (nombre, categoría, etc.) contra `dim_producto_lh_toner`.
+- **📱 Diseño responsive** – Sidebar fijo en escritorio y drawer en móvil.
+- **🌐 Despliegue web** – Build para web y publicación en **Firebase Hosting** (ej. `lh-toner.web.app`).
 
 ---
 
 ## 🛠 Tecnologías
 
-| Área        | Tecnología                          |
-|------------|--------------------------------------|
-| Frontend   | Flutter, Dart               |
-| Fuentes    | `google_fonts`                       |
-| Archivos   | `file_picker` (export CSV en web)    |
-| Backend    | API REST (Flask) – vr sección API  |
-| Hosting    | Firebase Hosting      |
+| Área       | Tecnología                                      |
+|-----------|--------------------------------------------------|
+| Frontend  | Flutter, Dart                                   |
+| SDK       | `^3.11.0` (ver `pubspec.yaml`)                  |
+| Fuentes   | `google_fonts`                                  |
+| Archivos  | `file_picker` + utilidades CSV (export en web)   |
+| Backend   | API REST **Flask** – blueprints en `API-LH-TONER` |
+| Hosting   | Firebase Hosting                                |
 
 ---
 
-## 📂 Estructura del proyecto
+## 📂 Estructura del proyecto (Flutter)
 
 ```text
 lib/
-├── main.dart                    # Punto de entrada, tema Material, home: Login
+├── main.dart                         # Entrada: tema Material, home → Login
 ├── config/
-│   └── api_config.dart         # URL base de la API (dev/prod)
+│   └── api_config.dart               # URL base API (desarrollo / producción)
 ├── services/
-│   ├── api_client.dart                    # Cliente HTTP (GET/POST/PUT/DELETE), token, ApiResponse
-│   ├── dim_usuario_lh_toner_api.dart      # Login y perfil (/me + /perfil)
-│   ├── dim_categoria_lh_toner_api.dart    # GET categorías → id_categoria para productos
-│   ├── dim_producto_lh_toner_api.dart     # CRUD productos → dim_producto_lh_toner
-│   ├── vw_stock_actual_api.dart           # GET vista SQL vw_stock_actual
-│   ├── dim_destino_lh_toner_api.dart      # GET destinos/sucursales → dim_destino_lh_toner
-│   └── fact_movimientos_lh_toner_api.dart # ENTRADA / SALIDA / ajuste → fact_movimientos_lh_toner
+│   ├── api_client.dart               # HTTP (GET/POST/PUT/DELETE), token, ApiResponse
+│   ├── dim_usuario_lh_toner_api.dart # Login, /me, listado usuarios, perfil
+│   ├── dim_categoria_lh_toner_api.dart
+│   ├── dim_producto_lh_toner_api.dart
+│   ├── dim_destino_lh_toner_api.dart
+│   ├── dim_tipo_movimiento_lh_toner_api.dart
+│   ├── vw_stock_actual_api.dart      # Stock actual (vista)
+│   └── fact_movimientos_lh_toner_api.dart  # Entradas, salidas, ajustes → hecho
 ├── Pages/
 │   ├── Login/
-│   │   └── Login.dart          # Pantalla de login
+│   │   └── Login.dart
 │   └── Pag Principal/
-│       ├── pagina_principal.dart  # Layout, sidebar, contenido según menú
-│       ├── entregar.dart       # Entregas + export CSV
-│       ├── inventario.dart     # Inventario
-│       └── productos.dart      # Productos
+│       ├── pagina_principal.dart     # Layout, menú, contenido según opción
+│       ├── salida.dart               # Salidas + CSV (web)
+│       ├── entrada.dart              # Entradas + CSV (web)
+│       ├── inventario.dart           # Solo lectura stock (vw_stock_actual)
+│       └── productos.dart            # CRUD productos
 └── utils/
-    ├── descarga_csv_stub.dart  # Stub para plataformas no web
-    └── descarga_csv_web.dart   # Descarga de CSV en navegador
+    ├── descarga_csv_stub.dart        # No web
+    └── descarga_csv_web.dart         # Descarga CSV en navegador
 ```
 
 ---
 
-## 🗄 Base de datos
+## 🗄 Base de datos (resumen)
 
-El backend persiste la información en **MySQL**. El diseño sigue un esquema tipo **almacén dimensional**: una **tabla de hechos** registra cada movimiento de stock y varias **tablas de dimensión** describen productos, categorías, destinos, tipos de movimiento y usuarios.
-
-### Rol en el sistema
+El backend persiste en **MySQL** con esquema tipo **almacén dimensional**: tabla de **hechos** (`FACT_MOVIMIENTOS_LH_TONER`) para movimientos y **dimensiones** (`DIM_*`) para catálogos.
 
 | Componente | Función |
 |------------|---------|
-| **Dimensiones (`DIM_*`)** | Catálogos maestros: qué productos existen, a qué categoría pertenecen, sucursales/destinos, tipos de movimiento (entrada, salida, etc.) y usuarios. |
-| **Hecho (`FACT_*`)** | Cada fila es un **movimiento**: cantidad, fecha, vínculos a producto, tipo, destino y usuario que lo registró. |
-| **Vista `vw_stock_actual`** | Agrega el stock actual por producto (suele derivarse de movimientos); la app la usa para **Inventario** y para elegir productos al **Entregar**. |
+| **Dimensiones (`DIM_*`)** | Productos, categorías, destinos, tipos de movimiento, usuarios. |
+| **Hecho (`FACT_*`)** | Cada fila = movimiento (cantidad, fechas, producto, tipo, destino, usuario). |
+| **`vw_stock_actual`** | Stock consolidado por producto; usa la app en **Inventario** y para elegir producto/cantidad en **Entrada** / **Salida**. |
 
-### Tablas principales
+### Tablas principales (referencia)
 
 | Tabla | Contenido típico |
 |-------|------------------|
-| `DIM_CATEGORIA_LH_TONER` | Categorías de producto (`id_categoria`, `nombre_categoria`, …). |
-| `DIM_PRODUCTO_LH_TONER` | Productos (`id_producto`, `nombre_producto`, FK a categoría `id_categoria`, …). |
-| `DIM_DESTINO_LH_TONER` | Sucursales u oficinas destino (`id_destino`, `nombre_destino`, …). |
-| `DIM_TIPO_MOVIMIENTO_LH_TONER` | Tipos de operación, p. ej. entradas y salidas (`id_tipo_movimiento`, `nombre_movimiento`, …). |
-| `DIM_USUARIO_LH_TONER` | Usuarios de la app: login (`nombre_usuario`), correo, contraseña hash, **nombre** para mostrar en pantalla. |
-| `FACT_MOVIMIENTOS_LH_TONER` | Movimientos: cantidad, fecha, `id_producto`, `id_tipo_mov`, `id_destino`, `id_usuario` (quién registró la operación). |
-
-Las columnas exactas deben coincidir con lo definido en MySQL Workbench / scripts de la BD; la API Flask solo **lee y escribe** sobre tablas ya creadas.
+| `DIM_CATEGORIA_LH_TONER` | Categorías (`id_categoria`, `nombre_categoria`, …). |
+| `DIM_PRODUCTO_LH_TONER` | Productos (`id_producto`, `nombre_producto`, `id_categoria`, …). |
+| `DIM_DESTINO_LH_TONER` | Sucursales / destinos (`id_destino`, `nombre_destino`, …). |
+| `DIM_TIPO_MOVIMIENTO_LH_TONER` | Tipos (entrada, salida, ajuste, …). |
+| `DIM_USUARIO_LH_TONER` | Usuarios (`nombre_usuario`, correo, hash contraseña, nombre para mostrar). |
+| `FACT_MOVIMIENTOS_LH_TONER` | Movimientos vinculados a producto, tipo, destino, usuario. |
 
 ### Relaciones (resumen)
 
-- **Producto → categoría:** `DIM_PRODUCTO` referencia `DIM_CATEGORIA` por `id_categoria`.
-- **Movimiento → dimensiones:** cada fila en `FACT_MOVIMIENTOS_LH_TONER` apunta a producto, tipo de movimiento, destino (cuando aplica) y usuario.
-- **Listado “Entregar”:** las salidas se filtran por tipo de movimiento cuyo nombre contiene “SALIDA”; el nombre mostrado del repartidor puede resolverse cruzando `id_usuario` con `DIM_USUARIO` (nombre para mostrar vs. login).
+- **Producto → categoría:** `DIM_PRODUCTO` → `id_categoria`.
+- **Movimiento:** apunta a producto, tipo, destino (cuando aplica) y usuario.
+- **Listados Salida / Entrada:** la app filtra por tipo de movimiento según la lógica del backend (p. ej. nombres que contengan SALIDA / ENTRADA); el nombre del usuario que registró puede resolverse con `id_usuario` → `DIM_USUARIO`.
 
-### Vista de stock
-
-- **`vw_stock_actual`:** expone por producto el stock consolidado que ve la pantalla **Inventario** y el selector de productos en **Entregar**. Debe estar creada en el servidor MySQL y ser coherente con las reglas de negocio (entradas suman, salidas restan, etc., según cómo esté definida la vista).
-
-> **Nota:** La app Flutter no se conecta directamente a MySQL; solo habla con la API REST. Cualquier cambio de esquema (nuevas columnas, índices) se hace en la base de datos y, si hace falta, en los endpoints del backend.
+> La app **no** conecta a MySQL directamente; solo a la **API**. Cambios de esquema → BD + endpoints Flask.
 
 ---
 
@@ -101,34 +99,39 @@ Las columnas exactas deben coincidir con lo definido en MySQL Workbench / script
 
 ### Configuración
 
-La URL base de la API se define en **`lib/config/api_config.dart`**:
+Archivo **`lib/config/api_config.dart`**:
 
-- **Desarrollo** (`flutter run`): `ApiConfig.developmentBaseUrl`
-- **Release** (ej. app desplegada): `ApiConfig.productionBaseUrl`
+- `ApiConfig.developmentBaseUrl` – desarrollo (`flutter run`).
+- `ApiConfig.productionBaseUrl` – build release / web desplegada.
 
-### Endpoints utilizados
+### Rutas que usa el frontend (referencia)
 
-| Servicio     | Ruta base                         | Uso principal                                      |
-|-------------|------------------------------------|----------------------------------------------------|
-| Login       | `POST /api/usuarios_lh_toner/login`| Body: `email`, `password` → token, nombre          |
-| Perfil      | `GET /api/usuarios_lh_toner/perfil?email=...` | Nombre del usuario                         |
-| Productos   | `/api/productos_lh_toner`          | GET lista, POST crear, PUT `/:id`, DELETE `/:id`  |
-| Inventario  | `/api/inventario_lh_toner`         | GET lista, POST añadir stock, PUT/DELETE `/:id`    |
-| Entregas    | `/api/entregar_lh_toner`           | GET lista, POST crear (descuenta stock), PUT/DELETE `/:id` |
+| Uso | Ruta base (ejemplo) |
+|-----|---------------------|
+| Login | `POST /api_lh_toner/login` (también disponible bajo prefijos compat: `/api/dim_usuario_lh_toner`, `/api/usuarios_lh_toner`) |
+| Usuario actual | `GET /api/dim_usuario_lh_toner/me` (JWT) |
+| Perfil / nombre | `GET /api/usuarios_lh_toner/perfil?email=` o `correo=` |
+| Categorías | `GET /api/dim_categoria_lh_toner` |
+| Productos | `/api/dim_producto_lh_toner` (CRUD según backend) |
+| Destinos | `GET /api/dim_destino_lh_toner` |
+| Tipos movimiento | `GET /api/dim_tipo_movimiento_lh_toner` |
+| Stock actual | `GET /api/vw_stock_actual` |
+| Movimientos | `/api/fact_movimientos_lh_toner` (y alias si el backend lo expone, p. ej. `movimientos_lh_toner`) |
 
-Los servicios (`login_api`, `products_api`, `inventario_api`, `entregar_api`) parsean las respuestas (listas o objetos anidados como `productos`, `data`, `items`) y devuelven modelos Dart (p. ej. `Producto`, `InventarioItem`, `EntregaItem`). Para entregas, si la cantidad supera el stock, la API puede devolver 400 con `stock_disponible` y `cantidad_solicitada`.
+Los servicios en `lib/services/*.dart` parsean JSON típico con envoltorios como `{ "data": [ ... ] }`. Los detalles de body (nombres de campos, IDs) deben coincidir con los blueprints en **`API-LH-TONER`**.
 
 ---
 
-## ▶ Cómo funciona la aplicación
+## ▶ Flujo de la aplicación
 
-1. **Arranque** – `main.dart` muestra la pantalla de **Login**.
-2. **Login** – El usuario ingresa email y contraseña. Se llama a `DimUsuarioLhTonerApi.validar()`. Si la API responde éxito, se guarda el token con `ApiClient.setAuthToken()` y se navega a **Página principal** (sin back stack).
-3. **Página principal** – Muestra sidebar (Entregar, Inventario, Productos, Salir). El nombre en el header se obtiene con `DimUsuarioLhTonerApi.obtenerNombreUsuario(email)` si hay email. El contenido central cambia según la opción elegida (por defecto: Entregar).
-4. **Entregar** – Lista salidas con `FactMovimientosLhTonerApi.listarSalidas()`, agrupadas por fecha y destino. Destinos desde `DimDestinoLhTonerApi`. Stock del formulario desde `VwStockActualApi`. Export CSV en web.
-5. **Inventario** – `VwStockActualApi.listarConEstado()` / vista `vw_stock_actual`; lista agrupada por categoría (producto + `stock_actual`). **Entregar** – tras guardar o eliminar salida, se incrementa un token para volver a pedir `vw_stock_actual` al reabrir el modal.
-6. **Productos** – Lista productos desde `DimProductoLhTonerApi.listar()` (agrupados por categoría), con CRUD completo.
-7. **Salir** – Diálogo de confirmación; se limpia el token con `ApiClient.setAuthToken(null)` y se vuelve al Login.
+1. **Arranque** – `main.dart` → **Login**.
+2. **Login** – `DimUsuarioLhTonerApi.validar()` → token `ApiClient.setAuthToken()` → **Página principal** (sin volver atrás con el stack).
+3. **Página principal** – Menú: **Salida**, **Entrada**, **Inventario**, **Productos**, **Salir**. Nombre en cabecera: JWT + `/me` o perfil por email.
+4. **Salida** – `FactMovimientosLhTonerApi` (salidas), destinos, stock desde `VwStockActualApi`; CSV en web.
+5. **Entrada** – Registro de entradas vía la misma API de movimientos; listado y CSV en web.
+6. **Inventario** – `VwStockActualApi` + categorías desde productos; solo consulta.
+7. **Productos** – `DimProductoLhTonerApi` (listado agrupado por categoría, CRUD).
+8. **Salir** – Confirmación, `ApiClient.setAuthToken(null)` → Login.
 
 ---
 
@@ -136,48 +139,62 @@ Los servicios (`login_api`, `products_api`, `inventario_api`, `entregar_api`) pa
 
 ### Requisitos
 
-- [Flutter SDK](https://flutter.dev/docs/get-started/install) (SDK ^3.11.0)
-- Backend Flask corriendo y accesible en la URL configurada en `api_config.dart` (misma red o URL pública si aplica)
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) compatible con **SDK ^3.11.0** (`pubspec.yaml`).
+- API Flask accesible en la URL configurada en `api_config.dart`.
 
-### Ejecución local
+### Comandos
 
 ```bash
-# Dependencias
+cd lh_tonner   # o la ruta donde clonaste el frontend
 flutter pub get
-
-# Web (Chrome)
-flutter run -d chrome
-
-# O para otro dispositivo/emulador
-flutter run
+flutter run -d chrome    # web
+# flutter run              # otro dispositivo
 ```
 
-### Build web (para desplegar)
+### Build web
 
 ```bash
 flutter build web --release
 ```
 
-La salida queda en `build/web/`. Para publicar en Firebase Hosting, ver **[DEPLOY_FIREBASE.md](DEPLOY_FIREBASE.md)**.
+Salida: `build/web/`. Pasos para Firebase: **[DEPLOY_FIREBASE.md](DEPLOY_FIREBASE.md)**.
 
 ---
 
-## 🌐 Despliegue en Firebase
-
-La app está preparada para Firebase Hosting:
+## 🌐 Despliegue en Firebase (resumen)
 
 1. `flutter build web --release`
-2. `firebase deploy`
-
+2. `firebase deploy` (según tu proyecto configurado)
 
 ---
 
 ## 📄 Resumen
 
-- **Frontend:** Flutter (web y multiplataforma), Material 3, diseño responsive.
-- **API:** Cliente centralizado en `ApiClient` + `ApiConfig`; servicios nombrados como tablas/vista (`dim_*`, `fact_*`, `vw_*`).
-- **Base de datos:** MySQL con tablas `DIM_*`, hecho `FACT_MOVIMIENTOS_LH_TONER` y vista `vw_stock_actual` (sección **Base de datos** más arriba en este README).
-- **Flujo:** Login → Página principal (Entregar / Inventario / Productos) → Salir.
-- **Backend esperado:** Flask con blueprints para usuarios, productos, inventario y entregas; respuestas JSON y, si aplica, JWT en login.
+| | |
+|--|--|
+| **Frontend** | Flutter, Material, responsive |
+| **API** | `ApiClient` + `ApiConfig` + servicios `dim_*`, `fact_*`, `vw_*` |
+| **Datos** | MySQL (dimensiones + hecho + vista stock); la app solo habla REST |
+| **Flujo** | Login → Salida / Entrada / Inventario / Productos → Salir |
 
-Si necesitas cambiar la URL del backend, edita **`lib/config/api_config.dart`** (`developmentBaseUrl` y/o `productionBaseUrl`).
+**Cambiar URL del backend:** `lib/config/api_config.dart`.
+
+---
+
+## ✏️ Cómo ir actualizando este README (plantilla para ti)
+
+Puedes copiar bloques de abajo en un archivo aparte (Word, Notion, etc.) y volcar aquí cuando quieras.
+
+- [ ] **Versión / changelog** – Añadir sección “Historial” o enlace a `CHANGELOG.md` si lo creas.
+- [ ] **Capturas** – Carpeta `docs/screenshots/` y enlaces desde aquí.
+- [ ] **Variables de entorno** – Si usas `--dart-define` para la URL en CI, documentarlas.
+- [ ] **Usuarios de prueba** – Solo en documentación interna (no commitear contraseñas reales).
+- [ ] **API detallada** – Copiar tabla de endpoints desde Swagger o desde los blueprints de `API-LH-TONER`.
+- [ ] **Manual de usuario** – Pasos en español para operadores (entrada vs salida, export CSV).
+- [ ] **Problemas frecuentes** – CORS, mezcla `http://localhost` vs IP LAN, token expirado.
+
+Si quieres un **documento descargable**: en el repo ya tienes este `README.md`; también puedes usar *GitHub → Raw* o exportar desde tu editor a PDF.
+
+---
+
+*Última revisión alineada con el código en `lib/` (menú Salida/Entrada/Inventario/Productos y servicios actuales).*
