@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' show min;
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
@@ -748,155 +749,176 @@ class _FormularioEntradaState extends State<_FormularioEntrada> {
   @override
   Widget build(BuildContext context) {
     final esEdicion = widget.movimientoExistente != null;
+    final maxDialogW = min(500.0, MediaQuery.sizeOf(context).width - 24);
 
-    return Container(
-      width: 500,
-      padding: const EdgeInsets.all(25),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              esEdicion ? 'Editar entrada' : 'Registrar entrada',
-              style: TextStyle(
-                fontSize: 22,
-                fontFamily: GoogleFonts.montserrat().fontFamily,
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: maxDialogW),
+      child: Padding(
+        padding: const EdgeInsets.all(25),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                esEdicion ? 'Editar entrada' : 'Registrar entrada',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontFamily: GoogleFonts.montserrat().fontFamily,
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            DropdownButtonFormField<int>(
-              value: _destinoIdSeleccionado,
-              decoration: const InputDecoration(
-                labelText: 'Destino (almacén / oficina central)',
-                border: OutlineInputBorder(),
+              DropdownButtonFormField<int>(
+                isExpanded: true,
+                value: _destinoIdSeleccionado,
+                decoration: const InputDecoration(
+                  labelText: 'Destino (almacén / oficina central)',
+                  border: OutlineInputBorder(),
+                ),
+                hint: const Text('Seleccionar destino'),
+                items: widget.destinos
+                    .map(
+                      (d) => DropdownMenuItem(
+                        value: d.id,
+                        child: Text(d.nombre, overflow: TextOverflow.ellipsis, maxLines: 1),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) => setState(() => _destinoIdSeleccionado = value),
               ),
-              hint: const Text('Seleccionar destino'),
-              items: widget.destinos
-                  .map((d) => DropdownMenuItem(value: d.id, child: Text(d.nombre)))
-                  .toList(),
-              onChanged: (value) => setState(() => _destinoIdSeleccionado = value),
-            ),
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            const Text('Productos', style: TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 10),
+              const Text('Productos', style: TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 10),
 
-            ...List.generate(_filasProducto.length, (index) {
-              final fila = _filasProducto[index];
-              final tieneError = _errorFilaIndex == index;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: DropdownButtonFormField<int>(
-                        value: fila.idProducto,
-                        decoration: InputDecoration(
-                          labelText: 'Producto',
-                          border: const OutlineInputBorder(),
-                          errorText: tieneError && _errorMsg != null ? '' : null,
-                        ),
-                        hint: const Text('Seleccionar'),
-                        items: widget.productos
-                            .map((p) => DropdownMenuItem<int>(
+              ...List.generate(_filasProducto.length, (index) {
+                final fila = _filasProducto[index];
+                final tieneError = _errorFilaIndex == index;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: DropdownButtonFormField<int>(
+                          isExpanded: true,
+                          value: fila.idProducto,
+                          decoration: InputDecoration(
+                            labelText: 'Producto',
+                            border: const OutlineInputBorder(),
+                            errorText: tieneError && _errorMsg != null ? '' : null,
+                          ),
+                          hint: const Text('Seleccionar'),
+                          items: widget.productos
+                              .map(
+                                (p) => DropdownMenuItem<int>(
                                   value: p.idProducto,
-                                  child: Text('${p.nombre} (${p.categoria})'),
-                                ))
-                            .toList(),
-                        onChanged: (value) => setState(() {
-                          fila.idProducto = value;
-                          _errorMsg = null;
-                          _errorFilaIndex = null;
-                        }),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    SizedBox(
-                      width: 90,
-                      child: TextField(
-                        controller: fila.cantidadController,
-                        keyboardType: TextInputType.number,
-                        onChanged: (_) => setState(() {
-                          _errorMsg = null;
-                          _errorFilaIndex = null;
-                        }),
-                        decoration: InputDecoration(
-                          labelText: 'Cant.',
-                          border: const OutlineInputBorder(),
-                          errorText: tieneError ? _errorMsg : null,
-                          errorStyle: const TextStyle(fontSize: 11),
+                                  child: Text(
+                                    '${p.nombre} (${p.categoria})',
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (value) => setState(() {
+                            fila.idProducto = value;
+                            _errorMsg = null;
+                            _errorFilaIndex = null;
+                          }),
                         ),
                       ),
-                    ),
-                    if (_filasProducto.length > 1)
-                      IconButton(
-                        icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
-                        onPressed: () => _quitarFila(index),
-                        tooltip: 'Quitar fila',
-                      )
-                    else
-                      const SizedBox(width: 48),
-                  ],
-                ),
-              );
-            }),
-
-            if (!esEdicion)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: _agregarOtraFila,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Agregar otro producto'),
-                ),
-              ),
-
-            if (_errorMsg != null && _errorFilaIndex == null) ...[
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.warning_amber_outlined, color: Colors.red[700], size: 24),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        _errorMsg!,
-                        style: TextStyle(color: Colors.red[800], fontSize: 13),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        flex: 1,
+                        child: TextField(
+                          controller: fila.cantidadController,
+                          keyboardType: TextInputType.number,
+                          onChanged: (_) => setState(() {
+                            _errorMsg = null;
+                            _errorFilaIndex = null;
+                          }),
+                          decoration: InputDecoration(
+                            labelText: 'Cant.',
+                            border: const OutlineInputBorder(),
+                            errorText: tieneError ? _errorMsg : null,
+                            errorStyle: const TextStyle(fontSize: 11),
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
-            const SizedBox(height: 16),
+                      if (_filasProducto.length > 1)
+                        SizedBox(
+                          width: 40,
+                          child: IconButton(
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                            icon: const Icon(Icons.remove_circle_outline, color: Colors.red, size: 22),
+                            onPressed: () => _quitarFila(index),
+                            tooltip: 'Quitar fila',
+                          ),
+                        )
+                      else
+                        const SizedBox(width: 40),
+                    ],
+                  ),
+                );
+              }),
 
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: widget.onCancelar,
-                    child: const Text('Cancelar'),
+              if (!esEdicion)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: _agregarOtraFila,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Agregar otro producto'),
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => _guardar(context),
-                    child: const Text('Guardar'),
+
+              if (_errorMsg != null && _errorFilaIndex == null) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.warning_amber_outlined, color: Colors.red[700], size: 24),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _errorMsg!,
+                          style: TextStyle(color: Colors.red[800], fontSize: 13),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+                const SizedBox(height: 8),
               ],
-            ),
-          ],
+              const SizedBox(height: 16),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: widget.onCancelar,
+                      child: const Text('Cancelar'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => _guardar(context),
+                      child: const Text('Guardar'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

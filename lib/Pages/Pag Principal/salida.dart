@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' show min;
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
@@ -747,35 +748,43 @@ class _FormularioSalidaState extends State<_FormularioSalida> {
   @override
   Widget build(BuildContext context) {
     final esEdicion = widget.movimientoExistente != null;
+    final maxDialogW = min(500.0, MediaQuery.sizeOf(context).width - 24);
 
-    return Container(
-      width: 500,
-      padding: const EdgeInsets.all(25),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              esEdicion ? 'Editar salida' : 'Registrar salida',
-              style: TextStyle(
-                fontSize: 22,
-                fontFamily: GoogleFonts.montserrat().fontFamily,
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: maxDialogW),
+      child: Padding(
+        padding: const EdgeInsets.all(25),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                esEdicion ? 'Editar salida' : 'Registrar salida',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontFamily: GoogleFonts.montserrat().fontFamily,
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            DropdownButtonFormField<int>(
-              value: _destinoIdSeleccionado,
-              decoration: const InputDecoration(
-                labelText: 'Sucursal / Destino',
-                border: OutlineInputBorder(),
+              DropdownButtonFormField<int>(
+                isExpanded: true,
+                value: _destinoIdSeleccionado,
+                decoration: const InputDecoration(
+                  labelText: 'Sucursal / Destino',
+                  border: OutlineInputBorder(),
+                ),
+                hint: const Text('Seleccionar destino'),
+                items: widget.destinos
+                    .map(
+                      (d) => DropdownMenuItem(
+                        value: d.id,
+                        child: Text(d.nombre, overflow: TextOverflow.ellipsis, maxLines: 1),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) => setState(() => _destinoIdSeleccionado = value),
               ),
-              hint: const Text('Seleccionar destino'),
-              items: widget.destinos
-                  .map((d) => DropdownMenuItem(value: d.id, child: Text(d.nombre)))
-                  .toList(),
-              onChanged: (value) => setState(() => _destinoIdSeleccionado = value),
-            ),
             const SizedBox(height: 20),
 
             const Text('Productos', style: TextStyle(fontWeight: FontWeight.w600)),
@@ -790,8 +799,9 @@ class _FormularioSalidaState extends State<_FormularioSalida> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      flex: 2,
+                      flex: 3,
                       child: DropdownButtonFormField<int>(
+                        isExpanded: true,
                         value: fila.idProducto,
                         decoration: InputDecoration(
                           labelText: 'Producto',
@@ -800,10 +810,16 @@ class _FormularioSalidaState extends State<_FormularioSalida> {
                         ),
                         hint: const Text('Seleccionar'),
                         items: widget.stockLines
-                            .map((s) => DropdownMenuItem<int>(
-                                  value: s.idProducto,
-                                  child: Text('${s.displayNombre} (stock: ${s.stockActual})'),
-                                ))
+                            .map(
+                              (s) => DropdownMenuItem<int>(
+                                value: s.idProducto,
+                                child: Text(
+                                  '${s.displayNombre} (stock: ${s.stockActual})',
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ),
+                            )
                             .toList(),
                         onChanged: (value) => setState(() {
                           fila.idProducto = value;
@@ -812,9 +828,9 @@ class _FormularioSalidaState extends State<_FormularioSalida> {
                         }),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    SizedBox(
-                      width: 90,
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 1,
                       child: TextField(
                         controller: fila.cantidadController,
                         keyboardType: TextInputType.number,
@@ -831,13 +847,18 @@ class _FormularioSalidaState extends State<_FormularioSalida> {
                       ),
                     ),
                     if (_filasProducto.length > 1)
-                      IconButton(
-                        icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
-                        onPressed: () => _quitarFila(index),
-                        tooltip: 'Quitar fila',
+                      SizedBox(
+                        width: 40,
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                          icon: const Icon(Icons.remove_circle_outline, color: Colors.red, size: 22),
+                          onPressed: () => _quitarFila(index),
+                          tooltip: 'Quitar fila',
+                        ),
                       )
                     else
-                      const SizedBox(width: 48),
+                      const SizedBox(width: 40),
                   ],
                 ),
               );
@@ -897,6 +918,7 @@ class _FormularioSalidaState extends State<_FormularioSalida> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
