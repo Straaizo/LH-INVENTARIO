@@ -13,9 +13,9 @@ Sistema de gestión de inventario desarrollado en **Flutter** para La Hornilla. 
 - **📤 Salida** – Registrar movimientos de **salida** (descuento de stock hacia un destino), listar historial **agrupado** (fecha/hora y destino), exportar a **CSV** en web (`file_picker` + descarga en navegador).
 - **📥 Entrada** – Registrar **entradas** de stock, listado agrupado, exportación **CSV** en web (misma mecánica que Salida).
 - **📋 Inventario** – Vista de **stock actual** desde la API/vista SQL `vw_stock_actual`, listado **agrupado por categoría** (refuerzo con datos de `dim_producto`). **No** incluye “agregar stock” desde esta pantalla: el stock se refleja vía movimientos en **Entrada** / **Salida** (y la vista en BD).
-- **📦 Productos** – CRUD de productos (nombre, categoría, etc.) contra `dim_producto_lh_toner`.
+- **📦 Productos** – CRUD de productos (nombre, categoría, etc.) contra.
 - **📱 Diseño responsive** – Sidebar fijo en escritorio y drawer en móvil.
-- **🌐 Despliegue web** – Build para web y publicación en **Firebase Hosting** (ej. `lh-toner.web.app`).
+- **🌐 Despliegue web** – Build para web y publicación en **Firebase Hosting** en proceso (ej. `lh-toner.web.app`).
 
 ---
 
@@ -28,7 +28,7 @@ Sistema de gestión de inventario desarrollado en **Flutter** para La Hornilla. 
 | Fuentes   | `google_fonts`                                  |
 | Archivos  | `file_picker` + utilidades CSV (export en web)   |
 | Backend   | API REST **Flask** – blueprints en `API-LH-TONER` |
-| Hosting   | Firebase Hosting                                |
+| Hosting   | Firebase Hosting  / por desplegar                 |
 
 ---
 
@@ -85,14 +85,6 @@ El backend persiste en **MySQL** con esquema tipo **almacén dimensional**: tabl
 | `DIM_USUARIO_LH_TONER` | Usuarios (`nombre_usuario`, correo, hash contraseña, nombre para mostrar). |
 | `FACT_MOVIMIENTOS_LH_TONER` | Movimientos vinculados a producto, tipo, destino, usuario. |
 
-### Relaciones (resumen)
-
-- **Producto → categoría:** `DIM_PRODUCTO` → `id_categoria`.
-- **Movimiento:** apunta a producto, tipo, destino (cuando aplica) y usuario.
-- **Listados Salida / Entrada:** la app filtra por tipo de movimiento según la lógica del backend (p. ej. nombres que contengan SALIDA / ENTRADA); el nombre del usuario que registró puede resolverse con `id_usuario` → `DIM_USUARIO`.
-
-> La app **no** conecta a MySQL directamente; solo a la **API**. Cambios de esquema → BD + endpoints Flask.
-
 ---
 
 ## 🔌 Comunicación con la API
@@ -102,7 +94,7 @@ El backend persiste en **MySQL** con esquema tipo **almacén dimensional**: tabl
 Archivo **`lib/config/api_config.dart`**:
 
 - `ApiConfig.developmentBaseUrl` – desarrollo (`flutter run`).
-- `ApiConfig.productionBaseUrl` – build release / web desplegada.
+- `ApiConfig.productionBaseUrl` – build release / web por desplegar.
 
 ### Rutas que usa el frontend (referencia)
 
@@ -116,9 +108,8 @@ Archivo **`lib/config/api_config.dart`**:
 | Destinos | `GET /api/dim_destino_lh_toner` |
 | Tipos movimiento | `GET /api/dim_tipo_movimiento_lh_toner` |
 | Stock actual | `GET /api/vw_stock_actual` |
-| Movimientos | `/api/fact_movimientos_lh_toner` (y alias si el backend lo expone, p. ej. `movimientos_lh_toner`) |
+| Movimientos | `/api/fact_movimientos_lh_toner` |
 
-Los servicios en `lib/services/*.dart` parsean JSON típico con envoltorios como `{ "data": [ ... ] }`. Los detalles de body (nombres de campos, IDs) deben coincidir con los blueprints en **`API-LH-TONER`**.
 
 ---
 
@@ -142,31 +133,7 @@ Los servicios en `lib/services/*.dart` parsean JSON típico con envoltorios como
 - [Flutter SDK](https://docs.flutter.dev/get-started/install) compatible con **SDK ^3.11.0** (`pubspec.yaml`).
 - API Flask accesible en la URL configurada en `api_config.dart`.
 
-### Comandos
 
-```bash
-cd lh_tonner   # o la ruta donde clonaste el frontend
-flutter pub get
-flutter run -d chrome    # web
-# flutter run              # otro dispositivo
-```
-
-### Build web
-
-```bash
-flutter build web --release
-```
-
-Salida: `build/web/`. Pasos para Firebase: **[DEPLOY_FIREBASE.md](DEPLOY_FIREBASE.md)**.
-
----
-
-## 🌐 Despliegue en Firebase (resumen)
-
-1. `flutter build web --release`
-2. `firebase deploy` (según tu proyecto configurado)
-
----
 
 ## 📄 Resumen
 
@@ -181,6 +148,4 @@ Salida: `build/web/`. Pasos para Firebase: **[DEPLOY_FIREBASE.md](DEPLOY_FIREBAS
 
 
 
----
 
-*Última revisión alineada con el código en `lib/` (menú Salida/Entrada/Inventario/Productos y servicios actuales).*
