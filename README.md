@@ -179,21 +179,7 @@ Salida: `build/web/`. Pasos para Firebase: **[DEPLOY_FIREBASE.md](DEPLOY_FIREBAS
 
 **Cambiar URL del backend:** `lib/config/api_config.dart`.
 
----
 
-## ✏️ Cómo ir actualizando este README (plantilla para ti)
-
-Puedes copiar bloques de abajo en un archivo aparte (Word, Notion, etc.) y volcar aquí cuando quieras.
-
-- [ ] **Versión / changelog** – Añadir sección “Historial” o enlace a `CHANGELOG.md` si lo creas.
-- [ ] **Capturas** – Carpeta `docs/screenshots/` y enlaces desde aquí.
-- [ ] **Variables de entorno** – Si usas `--dart-define` para la URL en CI, documentarlas.
-- [ ] **Usuarios de prueba** – Solo en documentación interna (no commitear contraseñas reales).
-- [ ] **API detallada** – Copiar tabla de endpoints desde Swagger o desde los blueprints de `API-LH-TONER`.
-- [ ] **Manual de usuario** – Pasos en español para operadores (entrada vs salida, export CSV).
-- [ ] **Problemas frecuentes** – CORS, mezcla `http://localhost` vs IP LAN, token expirado.
-
-Si quieres un **documento descargable**: en el repo ya tienes este `README.md`; también puedes usar *GitHub → Raw* o exportar desde tu editor a PDF.
 
 ---
 
