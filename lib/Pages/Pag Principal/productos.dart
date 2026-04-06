@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lh_tonner/services/dim_categoria_lh_toner_api.dart';
-import 'package:lh_tonner/services/dim_producto_lh_toner_api.dart';
+import 'package:lh_inventario/services/dim_categoria_lh_inventario_api.dart';
+import 'package:lh_inventario/services/dim_producto_lh_inventario_api.dart';
 
 class ProductosPage extends StatefulWidget {
   const ProductosPage({super.key});
@@ -11,8 +11,8 @@ class ProductosPage extends StatefulWidget {
 }
 
 class _ProductosPageState extends State<ProductosPage> {
-  List<DimProductoLhToner> productos = [];
-  List<DimCategoriaLhToner> categorias = [];
+  List<DimProductoLhInventario> productos = [];
+  List<DimCategoriaLhInventario> categorias = [];
   bool _cargando = true;
 
   @override
@@ -23,7 +23,7 @@ class _ProductosPageState extends State<ProductosPage> {
   }
 
   Future<void> _cargarCategorias() async {
-    final lista = await DimCategoriaLhTonerApi.listar();
+    final lista = await DimCategoriaLhInventarioApi.listar();
     if (mounted) {
       setState(() => categorias = lista);
     }
@@ -31,7 +31,7 @@ class _ProductosPageState extends State<ProductosPage> {
 
   Future<void> _cargarProductos() async {
     setState(() => _cargando = true);
-    final lista = await DimProductoLhTonerApi.listar();
+    final lista = await DimProductoLhInventarioApi.listar();
     if (mounted) {
       setState(() {
         productos = lista;
@@ -40,7 +40,7 @@ class _ProductosPageState extends State<ProductosPage> {
     }
   }
 
-  int? _idCategoriaInicial(DimProductoLhToner? editar) {
+  int? _idCategoriaInicial(DimProductoLhInventario? editar) {
     if (editar == null) return categorias.isNotEmpty ? categorias.first.idCategoria : null;
     if (editar.idCategoria != null) {
       final existe = categorias.any((c) => c.idCategoria == editar.idCategoria);
@@ -56,7 +56,7 @@ class _ProductosPageState extends State<ProductosPage> {
   @override
   Widget build(BuildContext context) {
     bool isMobile = MediaQuery.of(context).size.width < 600;
-    Map<String, List<DimProductoLhToner>> agrupados = {};
+    Map<String, List<DimProductoLhInventario>> agrupados = {};
 
     for (var p in productos) {
       agrupados.putIfAbsent(p.categoria, () => []);
@@ -154,7 +154,7 @@ class _ProductosPageState extends State<ProductosPage> {
                 : ListView(
                     children: agrupados.entries.map((entry) {
                       String categoria = entry.key;
-                      List<DimProductoLhToner> listaProductos = entry.value;
+                      List<DimProductoLhInventario> listaProductos = entry.value;
 
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -209,7 +209,7 @@ class _ProductosPageState extends State<ProductosPage> {
     );
   }
 
-  void _confirmarEliminar(DimProductoLhToner producto) {
+  void _confirmarEliminar(DimProductoLhInventario producto) {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -223,7 +223,7 @@ class _ProductosPageState extends State<ProductosPage> {
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              final res = await DimProductoLhTonerApi.eliminar(producto.idProducto);
+              final res = await DimProductoLhInventarioApi.eliminar(producto.idProducto);
               if (mounted) {
                 if (res.ok) {
                   _cargarProductos();
@@ -241,7 +241,7 @@ class _ProductosPageState extends State<ProductosPage> {
     );
   }
 
-  void _mostrarFormularioProducto({DimProductoLhToner? editarProducto}) {
+  void _mostrarFormularioProducto({DimProductoLhInventario? editarProducto}) {
     final esEdicion = editarProducto != null;
     final nombreController = TextEditingController(text: editarProducto?.nombre ?? '');
     int? idCategoriaSeleccionada = _idCategoriaInicial(editarProducto);
@@ -294,7 +294,7 @@ class _ProductosPageState extends State<ProductosPage> {
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
                         child: Text(
-                          'No hay categorías. Cree filas en DIM_CATEGORIA_LH_TONER o cargue GET /api/dim_categoria_lh_toner.',
+                          'No hay categorías. Cree filas en DIM_CATEGORIA_LH_INVENTARIO o cargue GET /api/dim_categoria_lh_inventario.',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.orange[800],
@@ -368,7 +368,7 @@ class _ProductosPageState extends State<ProductosPage> {
                                 return;
                               }
                               if (esEdicion) {
-                                final yaExiste = await DimProductoLhTonerApi.existeNombre(
+                                final yaExiste = await DimProductoLhInventarioApi.existeNombre(
                                   nombre,
                                   excluirId: editarProducto.idProducto,
                                 );
@@ -376,7 +376,7 @@ class _ProductosPageState extends State<ProductosPage> {
                                   setStateDialog(() => nombreError = 'El producto ya existe');
                                   return;
                                 }
-                                final res = await DimProductoLhTonerApi.actualizar(
+                                final res = await DimProductoLhInventarioApi.actualizar(
                                   idProducto: editarProducto.idProducto,
                                   nombreProducto: nombre,
                                   idCategoria: idCat,
@@ -393,12 +393,12 @@ class _ProductosPageState extends State<ProductosPage> {
                                       esAuth ? 'Sesión expirada o no autorizado. Inicie sesión de nuevo.' : msg);
                                 }
                               } else {
-                                final yaExiste = await DimProductoLhTonerApi.existeNombre(nombre);
+                                final yaExiste = await DimProductoLhInventarioApi.existeNombre(nombre);
                                 if (yaExiste) {
                                   setStateDialog(() => nombreError = 'El producto ya existe');
                                   return;
                                 }
-                                final res = await DimProductoLhTonerApi.crear(
+                                final res = await DimProductoLhInventarioApi.crear(
                                   nombreProducto: nombre,
                                   idCategoria: idCat,
                                 );

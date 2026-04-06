@@ -1,8 +1,8 @@
-import 'package:lh_tonner/services/api_client.dart';
+import 'package:lh_inventario/services/api_client.dart';
 
-/// Fila de [DIM_PRODUCTO_LH_TONER].
-class DimProductoLhToner {
-  const DimProductoLhToner({
+/// Fila de [DIM_PRODUCTO_LH_INVENTARIO].
+class DimProductoLhInventario {
+  const DimProductoLhInventario({
     required this.idProducto,
     required this.nombreProducto,
     required this.nombreCategoria,
@@ -17,8 +17,8 @@ class DimProductoLhToner {
   String get nombre => nombreProducto;
   String get categoria => nombreCategoria;
 
-  factory DimProductoLhToner.fromJson(Map<String, dynamic> json) {
-    return DimProductoLhToner(
+  factory DimProductoLhInventario.fromJson(Map<String, dynamic> json) {
+    return DimProductoLhInventario(
       idProducto: (json['id_producto'] ?? json['id_productos'] ?? json['id'] ?? 0) as int,
       nombreProducto: (json['nombre_producto'] ?? json['nombre'] ?? '') as String,
       nombreCategoria: (json['nombre_categoria'] ?? json['categoria'] ?? '') as String,
@@ -27,12 +27,12 @@ class DimProductoLhToner {
   }
 }
 
-class DimProductoLhTonerApi {
-  DimProductoLhTonerApi._();
+class DimProductoLhInventarioApi {
+  DimProductoLhInventarioApi._();
 
-  static const String _path = '/api/dim_producto_lh_toner';
+  static const String _path = '/api/dim_producto_lh_inventario';
 
-  static Future<List<DimProductoLhToner>> listar() async {
+  static Future<List<DimProductoLhInventario>> listar() async {
     final res = await ApiClient.get(_path);
     if (!res.ok || res.data == null) return [];
     List? list;
@@ -44,12 +44,12 @@ class DimProductoLhTonerApi {
     }
     if (list == null) return [];
     return list
-        .map((e) => DimProductoLhToner.fromJson(Map<String, dynamic>.from(e as Map)))
+        .map((e) => DimProductoLhInventario.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
   }
 
   /// Contrato recomendado: **`nombre_producto` + `id_categoria`** (del GET categorías).
-  static Future<({bool ok, String? message, DimProductoLhToner? producto})> crear({
+  static Future<({bool ok, String? message, DimProductoLhInventario? producto})> crear({
     required String nombreProducto,
     required int idCategoria,
   }) async {
@@ -58,12 +58,12 @@ class DimProductoLhTonerApi {
       'id_categoria': idCategoria,
     });
     if (res.ok) {
-      DimProductoLhToner? creado;
+      DimProductoLhInventario? creado;
       if (res.data is Map) {
         final m = Map<String, dynamic>.from(res.data as Map);
         final raw = m['producto'] ?? m['data'] ?? m;
         if (raw is Map) {
-          creado = DimProductoLhToner.fromJson(Map<String, dynamic>.from(raw));
+          creado = DimProductoLhInventario.fromJson(Map<String, dynamic>.from(raw));
         }
       }
       return (ok: true, message: null, producto: creado);

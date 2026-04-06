@@ -5,14 +5,14 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:lh_tonner/utils/descarga_csv_stub.dart'
-    if (dart.library.html) 'package:lh_tonner/utils/descarga_csv_web.dart' as descarga_csv;
+import 'package:lh_inventario/utils/descarga_csv_stub.dart'
+    if (dart.library.html) 'package:lh_inventario/utils/descarga_csv_web.dart' as descarga_csv;
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lh_tonner/services/dim_destino_lh_toner_api.dart';
-import 'package:lh_tonner/services/dim_tipo_movimiento_lh_toner_api.dart';
-import 'package:lh_tonner/services/dim_usuario_lh_toner_api.dart';
-import 'package:lh_tonner/services/dim_producto_lh_toner_api.dart';
-import 'package:lh_tonner/services/fact_movimientos_lh_toner_api.dart';
+import 'package:lh_inventario/services/dim_destino_lh_inventario_api.dart';
+import 'package:lh_inventario/services/dim_tipo_movimiento_lh_inventario_api.dart';
+import 'package:lh_inventario/services/dim_usuario_lh_inventario_api.dart';
+import 'package:lh_inventario/services/dim_producto_lh_inventario_api.dart';
+import 'package:lh_inventario/services/fact_movimientos_lh_inventario_api.dart';
 
 class EntradaPage extends StatefulWidget {
   const EntradaPage({super.key});
@@ -24,7 +24,7 @@ class EntradaPage extends StatefulWidget {
 class _EntradaPageState extends State<EntradaPage> {
   List<FactMovimientoSalidaItem> entradas = [];
   bool _cargando = true;
-  /// `id_usuario` → nombre para mostrar (desde `GET /api/dim_usuario_lh_toner`).
+  /// `id_usuario` → nombre para mostrar (desde `GET /api/dim_usuario_lh_inventario`).
   Map<int, String> _nombresPorUsuarioId = {};
 
   /// Token para forzar recarga del formulario al reabrir el modal.
@@ -38,8 +38,8 @@ class _EntradaPageState extends State<EntradaPage> {
 
   Future<void> _cargarEntradas() async {
     setState(() => _cargando = true);
-    final lista = await FactMovimientosLhTonerApi.listarEntradas();
-    final mapaNombres = await DimUsuarioLhTonerApi.mapaNombresParaMostrarPorId();
+    final lista = await FactMovimientosLhInventarioApi.listarEntradas();
+    final mapaNombres = await DimUsuarioLhInventarioApi.mapaNombresParaMostrarPorId();
     if (mounted) {
       setState(() {
         entradas = lista;
@@ -61,10 +61,10 @@ class _EntradaPageState extends State<EntradaPage> {
 
   /// Productos (dim) + destinos + id tipo "Entrada" para POST de stock.
   static Future<List<Object?>> _cargarDatosFormularioEntrada() async {
-    final tipos = await DimTipoMovimientoLhTonerApi.listar();
-    final idEntrada = DimTipoMovimientoLhTonerApi.idParaEntrada(tipos);
-    final destinos = await DimDestinoLhTonerApi.listar();
-    final productos = await DimProductoLhTonerApi.listar();
+    final tipos = await DimTipoMovimientoLhInventarioApi.listar();
+    final idEntrada = DimTipoMovimientoLhInventarioApi.idParaEntrada(tipos);
+    final destinos = await DimDestinoLhInventarioApi.listar();
+    final productos = await DimProductoLhInventarioApi.listar();
     return [productos, destinos, idEntrada];
   }
 
@@ -375,11 +375,11 @@ class _EntradaPageState extends State<EntradaPage> {
                 );
               }
               final productos = (snapshot.data != null && snapshot.data!.isNotEmpty)
-                  ? snapshot.data![0] as List<DimProductoLhToner>
-                  : <DimProductoLhToner>[];
+                  ? snapshot.data![0] as List<DimProductoLhInventario>
+                  : <DimProductoLhInventario>[];
               final destinos = (snapshot.data != null && snapshot.data!.length > 1)
-                  ? snapshot.data![1] as List<DimDestinoLhTonerRow>
-                  : <DimDestinoLhTonerRow>[];
+                  ? snapshot.data![1] as List<DimDestinoLhInventarioRow>
+                  : <DimDestinoLhInventarioRow>[];
               final idTipoEntrada = (snapshot.data != null && snapshot.data!.length > 2)
                   ? snapshot.data![2] as int?
                   : null;
@@ -447,7 +447,7 @@ class _EntradaPageState extends State<EntradaPage> {
                       const SizedBox(height: 20),
                       const Text(
                         'No se encontró el tipo de movimiento "Entrada" en '
-                        'GET /api/dim_tipo_movimiento_lh_toner.',
+                        'GET /api/dim_tipo_movimiento_lh_inventario.',
                       ),
                       const SizedBox(height: 20),
                       TextButton(
@@ -502,11 +502,11 @@ class _EntradaPageState extends State<EntradaPage> {
                 );
               }
               final productos = (snapshot.data != null && snapshot.data!.isNotEmpty)
-                  ? snapshot.data![0] as List<DimProductoLhToner>
-                  : <DimProductoLhToner>[];
+                  ? snapshot.data![0] as List<DimProductoLhInventario>
+                  : <DimProductoLhInventario>[];
               final destinos = (snapshot.data != null && snapshot.data!.length > 1)
-                  ? snapshot.data![1] as List<DimDestinoLhTonerRow>
-                  : <DimDestinoLhTonerRow>[];
+                  ? snapshot.data![1] as List<DimDestinoLhInventarioRow>
+                  : <DimDestinoLhInventarioRow>[];
               final idTipoEntrada = (snapshot.data != null && snapshot.data!.length > 2)
                   ? snapshot.data![2] as int?
                   : null;
@@ -562,7 +562,7 @@ class _EntradaPageState extends State<EntradaPage> {
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              final res = await FactMovimientosLhTonerApi.eliminar(item.idMovimiento);
+              final res = await FactMovimientosLhInventarioApi.eliminar(item.idMovimiento);
               if (!mounted) return;
               if (res.ok) {
                 _cargarEntradas();
@@ -640,7 +640,7 @@ class _EntradaPageState extends State<EntradaPage> {
             onPressed: () async {
               Navigator.pop(ctx);
               for (final item in grupo) {
-                await FactMovimientosLhTonerApi.eliminar(item.idMovimiento);
+                await FactMovimientosLhInventarioApi.eliminar(item.idMovimiento);
                 if (!mounted) return;
               }
               _cargarEntradas();
@@ -665,8 +665,8 @@ class _FormularioEntrada extends StatefulWidget {
     this.movimientoExistente,
   });
 
-  final List<DimProductoLhToner> productos;
-  final List<DimDestinoLhTonerRow> destinos;
+  final List<DimProductoLhInventario> productos;
+  final List<DimDestinoLhInventarioRow> destinos;
   /// Obligatorio para registrar nueva entrada; puede ser null al editar (solo PUT).
   final int? idTipoMovEntrada;
   final VoidCallback onExito;
@@ -708,7 +708,7 @@ class _FormularioEntradaState extends State<_FormularioEntrada> {
       _filasProducto.add(_FilaProductoEntrada(idProducto: e.idProducto)
         ..cantidadController.text = e.cantidad.toString());
     } else {
-      final idOc = DimDestinoLhTonerApi.idParaOficinaCentral(widget.destinos);
+      final idOc = DimDestinoLhInventarioApi.idParaOficinaCentral(widget.destinos);
       _destinoIdSeleccionado =
           idOc ?? (widget.destinos.isNotEmpty ? widget.destinos.first.id : null);
       if (widget.productos.isNotEmpty) {
@@ -952,7 +952,7 @@ class _FormularioEntradaState extends State<_FormularioEntrada> {
         );
         return;
       }
-      final res = await FactMovimientosLhTonerApi.actualizarSalida(
+      final res = await FactMovimientosLhInventarioApi.actualizarSalida(
         widget.movimientoExistente!.idMovimiento,
         idDestino: _destinoIdSeleccionado,
         idProducto: fila.idProducto,
@@ -1007,7 +1007,7 @@ class _FormularioEntradaState extends State<_FormularioEntrada> {
     for (var i = 0; i < _filasProducto.length; i++) {
       final fila = _filasProducto[i];
       final cantidad = int.tryParse(fila.cantidadController.text.trim()) ?? 0;
-      final res = await FactMovimientosLhTonerApi.entrada(
+      final res = await FactMovimientosLhInventarioApi.entrada(
         idProducto: fila.idProducto!,
         cantidad: cantidad,
         idDestino: _destinoIdSeleccionado!,

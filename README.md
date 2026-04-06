@@ -1,8 +1,8 @@
-# 📦 LH Toner – Sistema de Inventario
+# 📦 LH Inventario – Sistema unificado
 
 Sistema de gestión de inventario desarrollado en **Flutter** para La Hornilla. Permite administrar **productos**, consultar **stock** (**Inventario**), registrar **entradas** de mercadería y **salidas** hacia sucursales/destinos, con autenticación y comunicación con una **API REST (Flask)**.
 
-> **Backend:** el código del servidor suele vivir en la carpeta hermana **`API-LH-TONER`** (mismo workspace). Este README describe sobre todo el **frontend** (`lh_tonner`).
+> **Backend:** el código del servidor suele vivir en la carpeta hermana **`API-BASE-LH`** (mismo workspace). Este README describe sobre todo el **frontend** (paquete Dart **`lh_inventario`**; la carpeta del proyecto puede seguir llamándose `lh_tonner` hasta que la renombres).
 
 ---
 
@@ -41,13 +41,13 @@ lib/
 │   └── api_config.dart               # URL base API (desarrollo / producción)
 ├── services/
 │   ├── api_client.dart               # HTTP (GET/POST/PUT/DELETE), token, ApiResponse
-│   ├── dim_usuario_lh_toner_api.dart # Login, /me, listado usuarios, perfil
-│   ├── dim_categoria_lh_toner_api.dart
-│   ├── dim_producto_lh_toner_api.dart
-│   ├── dim_destino_lh_toner_api.dart
-│   ├── dim_tipo_movimiento_lh_toner_api.dart
+│   ├── dim_usuario_lh_inventario_api.dart # Login, /me, listado usuarios, perfil
+│   ├── dim_categoria_lh_inventario_api.dart
+│   ├── dim_producto_lh_inventario_api.dart
+│   ├── dim_destino_lh_inventario_api.dart
+│   ├── dim_tipo_movimiento_lh_inventario_api.dart
 │   ├── vw_stock_actual_api.dart      # Stock actual (vista)
-│   └── fact_movimientos_lh_toner_api.dart  # Entradas, salidas, ajustes → hecho
+│   └── fact_movimientos_lh_inventario_api.dart  # Entradas, salidas, ajustes → hecho
 ├── Pages/
 │   ├── Login/
 │   │   └── Login.dart
@@ -66,7 +66,7 @@ lib/
 
 ## 🗄 Base de datos (resumen)
 
-El backend persiste en **MySQL** con esquema tipo **almacén dimensional**: tabla de **hechos** (`FACT_MOVIMIENTOS_LH_TONER`) para movimientos y **dimensiones** (`DIM_*`) para catálogos.
+El backend persiste en **MySQL** con esquema tipo **almacén dimensional**: tabla de **hechos** (`FACT_MOVIMIENTOS_LH_INVENTARIO`) para movimientos y **dimensiones** (`DIM_*`) para catálogos.
 
 | Componente | Función |
 |------------|---------|
@@ -78,12 +78,12 @@ El backend persiste en **MySQL** con esquema tipo **almacén dimensional**: tabl
 
 | Tabla | Contenido típico |
 |-------|------------------|
-| `DIM_CATEGORIA_LH_TONER` | Categorías (`id_categoria`, `nombre_categoria`, …). |
-| `DIM_PRODUCTO_LH_TONER` | Productos (`id_producto`, `nombre_producto`, `id_categoria`, …). |
-| `DIM_DESTINO_LH_TONER` | Sucursales / destinos (`id_destino`, `nombre_destino`, …). |
-| `DIM_TIPO_MOVIMIENTO_LH_TONER` | Tipos (entrada, salida, ajuste, …). |
-| `DIM_USUARIO_LH_TONER` | Usuarios (`nombre_usuario`, correo, hash contraseña, nombre para mostrar). |
-| `FACT_MOVIMIENTOS_LH_TONER` | Movimientos vinculados a producto, tipo, destino, usuario. |
+| `DIM_CATEGORIA_LH_INVENTARIO` | Categorías (`id_categoria`, `nombre_categoria`, …). |
+| `DIM_PRODUCTO_LH_INVENTARIO` | Productos (`id_producto`, `nombre_producto`, `id_categoria`, …). |
+| `DIM_DESTINO_LH_INVENTARIO` | Sucursales / destinos (`id_destino`, `nombre_destino`, …). |
+| `DIM_TIPO_MOVIMIENTO_LH_INVENTARIO` | Tipos (entrada, salida, ajuste, …). |
+| `DIM_USUARIO_LH_INVENTARIO` | Usuarios (`nombre_usuario`, correo, hash contraseña, nombre para mostrar). |
+| `FACT_MOVIMIENTOS_LH_INVENTARIO` | Movimientos vinculados a producto, tipo, destino, usuario. |
 
 ---
 
@@ -100,15 +100,15 @@ Archivo **`lib/config/api_config.dart`**:
 
 | Uso | Ruta base (ejemplo) |
 |-----|---------------------|
-| Login | `POST /api_lh_toner/login` (también disponible bajo prefijos compat: `/api/dim_usuario_lh_toner`, `/api/usuarios_lh_toner`) |
-| Usuario actual | `GET /api/dim_usuario_lh_toner/me` (JWT) |
-| Perfil / nombre | `GET /api/usuarios_lh_toner/perfil?email=` o `correo=` |
-| Categorías | `GET /api/dim_categoria_lh_toner` |
-| Productos | `/api/dim_producto_lh_toner` (CRUD según backend) |
-| Destinos | `GET /api/dim_destino_lh_toner` |
-| Tipos movimiento | `GET /api/dim_tipo_movimiento_lh_toner` |
+| Login | `POST /api_lh_inventario/login` (también disponible bajo prefijos compat: `/api/dim_usuario_lh_inventario`, `/api/usuarios_lh_inventario`) |
+| Usuario actual | `GET /api/dim_usuario_lh_inventario/me` (JWT) |
+| Perfil / nombre | `GET /api/usuarios_lh_inventario/perfil?email=` o `correo=` |
+| Categorías | `GET /api/dim_categoria_lh_inventario` |
+| Productos | `/api/dim_producto_lh_inventario` (CRUD según backend) |
+| Destinos | `GET /api/dim_destino_lh_inventario` |
+| Tipos movimiento | `GET /api/dim_tipo_movimiento_lh_inventario` |
 | Stock actual | `GET /api/vw_stock_actual` |
-| Movimientos | `/api/fact_movimientos_lh_toner` |
+| Movimientos | `/api/fact_movimientos_lh_inventario` |
 
 
 ---
@@ -116,12 +116,12 @@ Archivo **`lib/config/api_config.dart`**:
 ## ▶ Flujo de la aplicación
 
 1. **Arranque** – `main.dart` → **Login**.
-2. **Login** – `DimUsuarioLhTonerApi.validar()` → token `ApiClient.setAuthToken()` → **Página principal** (sin volver atrás con el stack).
+2. **Login** – `DimUsuarioLhInventarioApi.validar()` → token `ApiClient.setAuthToken()` → **Página principal** (sin volver atrás con el stack).
 3. **Página principal** – Menú: **Salida**, **Entrada**, **Inventario**, **Productos**, **Salir**. Nombre en cabecera: JWT + `/me` o perfil por email.
-4. **Salida** – `FactMovimientosLhTonerApi` (salidas), destinos, stock desde `VwStockActualApi`; CSV en web.
+4. **Salida** – `FactMovimientosLhInventarioApi` (salidas), destinos, stock desde `VwStockActualApi`; CSV en web.
 5. **Entrada** – Registro de entradas vía la misma API de movimientos; listado y CSV en web.
 6. **Inventario** – `VwStockActualApi` + categorías desde productos; solo consulta.
-7. **Productos** – `DimProductoLhTonerApi` (listado agrupado por categoría, CRUD).
+7. **Productos** – `DimProductoLhInventarioApi` (listado agrupado por categoría, CRUD).
 8. **Salir** – Confirmación, `ApiClient.setAuthToken(null)` → Login.
 
 ---

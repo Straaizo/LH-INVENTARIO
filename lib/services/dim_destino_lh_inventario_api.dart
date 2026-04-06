@@ -1,8 +1,8 @@
-import 'package:lh_tonner/services/api_client.dart';
+import 'package:lh_inventario/services/api_client.dart';
 
-/// Fila de [DIM_DESTINO_LH_TONER]: id_destino, nombre_destino.
-class DimDestinoLhTonerRow {
-  const DimDestinoLhTonerRow({required this.idDestino, required this.nombreDestino});
+/// Fila de [DIM_DESTINO_LH_INVENTARIO]: id_destino, nombre_destino.
+class DimDestinoLhInventarioRow {
+  const DimDestinoLhInventarioRow({required this.idDestino, required this.nombreDestino});
 
   final int idDestino;
   final String nombreDestino;
@@ -11,20 +11,20 @@ class DimDestinoLhTonerRow {
   int get id => idDestino;
   String get nombre => nombreDestino;
 
-  factory DimDestinoLhTonerRow.fromJson(Map<String, dynamic> json) {
-    return DimDestinoLhTonerRow(
+  factory DimDestinoLhInventarioRow.fromJson(Map<String, dynamic> json) {
+    return DimDestinoLhInventarioRow(
       idDestino: (json['id_destino'] ?? json['destino_id'] ?? json['id'] ?? 0) as int,
       nombreDestino: (json['nombre_destino'] ?? json['nombreDestino'] ?? json['nombre'] ?? '') as String,
     );
   }
 }
 
-class DimDestinoLhTonerApi {
-  DimDestinoLhTonerApi._();
+class DimDestinoLhInventarioApi {
+  DimDestinoLhInventarioApi._();
 
-  static const String _path = '/api/dim_destino_lh_toner';
+  static const String _path = '/api/dim_destino_lh_inventario';
 
-  static Future<List<DimDestinoLhTonerRow>> listar() async {
+  static Future<List<DimDestinoLhInventarioRow>> listar() async {
     final res = await ApiClient.get(_path);
     if (!res.ok || res.data == null) return [];
     List? list;
@@ -36,7 +36,7 @@ class DimDestinoLhTonerApi {
     }
     if (list == null) return [];
     return list
-        .map((e) => DimDestinoLhTonerRow.fromJson(Map<String, dynamic>.from(e as Map)))
+        .map((e) => DimDestinoLhInventarioRow.fromJson(Map<String, dynamic>.from(e as Map)))
         .where((d) => d.idDestino != 0 && d.nombreDestino.isNotEmpty)
         .toList();
   }
@@ -46,7 +46,7 @@ class DimDestinoLhTonerApi {
   /// Destino sugerido para entradas de inventario: «Almacén», «Stock», «Depósito», etc.
   /// Si no hay coincidencia por nombre, devuelve el primer destino de la lista.
   /// Si la lista está vacía, devuelve `null`.
-  static int? idPreferidoParaEntradaInventario(Iterable<DimDestinoLhTonerRow> destinos) {
+  static int? idPreferidoParaEntradaInventario(Iterable<DimDestinoLhInventarioRow> destinos) {
     final list = destinos.toList();
     if (list.isEmpty) return null;
     int? porNombre(bool Function(String n) ok) {
@@ -63,7 +63,7 @@ class DimDestinoLhTonerApi {
   }
 
   /// Para "Añadir stock": destino fijo "oficina central" (oculto en UI). Fallback: primer destino.
-  static int? idParaOficinaCentral(Iterable<DimDestinoLhTonerRow> destinos) {
+  static int? idParaOficinaCentral(Iterable<DimDestinoLhInventarioRow> destinos) {
     final list = destinos.toList();
     if (list.isEmpty) return null;
     for (final d in list) {

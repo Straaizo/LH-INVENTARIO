@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lh_tonner/services/dim_producto_lh_toner_api.dart';
-import 'package:lh_tonner/services/vw_stock_actual_api.dart';
+import 'package:lh_inventario/services/dim_producto_lh_inventario_api.dart';
+import 'package:lh_inventario/services/vw_stock_actual_api.dart';
 
 class InventarioPage extends StatefulWidget {
   const InventarioPage({super.key});
@@ -26,7 +26,7 @@ class _InventarioPageState extends State<InventarioPage> {
   Future<void> _cargarInventario() async {
     setState(() => _cargando = true);
     final stockFuture = VwStockActualApi.listarConEstado();
-    final productosFuture = DimProductoLhTonerApi.listar();
+    final productosFuture = DimProductoLhInventarioApi.listar();
     final r = await stockFuture;
     final productos = await productosFuture;
     final mapCat = <int, String>{};

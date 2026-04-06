@@ -1,4 +1,4 @@
-import 'package:lh_tonner/services/api_client.dart';
+import 'package:lh_inventario/services/api_client.dart';
 
 /// Una fila de la vista SQL [vw_stock_actual] (stock = suma ENTRADA - SALIDA).
 class VwStockActualRow {

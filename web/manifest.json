@@ -1,6 +1,6 @@
 {
-    "name": "lh_tonner",
-    "short_name": "lh_tonner",
+    "name": "LH Inventario",
+    "short_name": "LH Inventario",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

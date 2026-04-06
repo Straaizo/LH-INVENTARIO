@@ -1,6 +1,6 @@
-import 'package:lh_tonner/services/api_client.dart';
+import 'package:lh_inventario/services/api_client.dart';
 
-/// Respuesta del endpoint de login (usuario en [dim_usuario_lh_toner]).
+/// Respuesta del endpoint de login (usuario en [dim_usuario_lh_inventario]).
 class LoginResult {
   const LoginResult({
     required this.ok,
@@ -22,15 +22,15 @@ class LoginResult {
   final String? errorCode;
 }
 
-/// Autenticación y perfil ligados a [dim_usuario_lh_toner].
-class DimUsuarioLhTonerApi {
-  DimUsuarioLhTonerApi._();
+/// Autenticación y perfil ligados a [dim_usuario_lh_inventario].
+class DimUsuarioLhInventarioApi {
+  DimUsuarioLhInventarioApi._();
 
-  static const String _pathLogin = '/api_lh_toner/login';
-  static const String _pathMe = '/api/dim_usuario_lh_toner/me';
+  static const String _pathLogin = '/api_lh_inventario/login';
+  static const String _pathMe = '/api/dim_usuario_lh_inventario/me';
   /// Listado completo (JWT): incluye `nombre` para mostrar y `nombre_usuario` (login).
-  static const String _pathListar = '/api/dim_usuario_lh_toner';
-  static const String _pathPerfilBase = '/api/usuarios_lh_toner/perfil';
+  static const String _pathListar = '/api/dim_usuario_lh_inventario';
+  static const String _pathPerfilBase = '/api/usuarios_lh_inventario/perfil';
 
   static String? _nombreDesdeUsuarioMap(Map<String, dynamic>? m) {
     if (m == null) return null;
@@ -116,8 +116,8 @@ class DimUsuarioLhTonerApi {
 
   /// Nombre para mostrar en la app.
   ///
-  /// 1) Si hay JWT: **`GET /api/dim_usuario_lh_toner/me`** (recomendado en producción).
-  /// 2) Si no: **`GET /api/usuarios_lh_toner/perfil?email=`** (también acepta `correo=` en el servidor).
+  /// 1) Si hay JWT: **`GET /api/dim_usuario_lh_inventario/me`** (recomendado en producción).
+  /// 2) Si no: **`GET /api/usuarios_lh_inventario/perfil?email=`** (también acepta `correo=` en el servidor).
   static Future<String> obtenerNombreUsuario(String email) async {
     if (ApiClient.hasAuthToken) {
       final res = await ApiClient.get(_pathMe);
@@ -149,6 +149,27 @@ class DimUsuarioLhTonerApi {
       if (top is String && top.trim().isNotEmpty) return top.trim();
     }
     return 'Usuario';
+  }
+
+  /// ID + nombre del usuario con sesión activa (desde JWT via `/me`).
+  static Future<({int? id, String nombre})> obtenerUsuarioActual() async {
+    if (ApiClient.hasAuthToken) {
+      final res = await ApiClient.get(_pathMe);
+      if (res.ok && res.data is Map) {
+        final data = res.data as Map<String, dynamic>;
+        final u = data['usuario'] ?? data['user'];
+        if (u is Map) {
+          final m = Map<String, dynamic>.from(u);
+          final rawId = m['id_usuario'] ?? m['id'];
+          int? id;
+          if (rawId is int) id = rawId;
+          else if (rawId is num) id = rawId.toInt();
+          final nombre = _nombreDesdeUsuarioMap(m) ?? 'Usuario';
+          return (id: id, nombre: nombre);
+        }
+      }
+    }
+    return (id: null, nombre: 'Usuario');
   }
 
   /// Mapa `id_usuario` → nombre para mostrar (columna `nombre`; si está vacío, `nombre_usuario`).

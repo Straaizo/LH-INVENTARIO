@@ -5,14 +5,14 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:lh_tonner/utils/descarga_csv_stub.dart'
-    if (dart.library.html) 'package:lh_tonner/utils/descarga_csv_web.dart' as descarga_csv;
+import 'package:lh_inventario/utils/descarga_csv_stub.dart'
+    if (dart.library.html) 'package:lh_inventario/utils/descarga_csv_web.dart' as descarga_csv;
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lh_tonner/services/dim_destino_lh_toner_api.dart';
-import 'package:lh_tonner/services/dim_tipo_movimiento_lh_toner_api.dart';
-import 'package:lh_tonner/services/dim_usuario_lh_toner_api.dart';
-import 'package:lh_tonner/services/fact_movimientos_lh_toner_api.dart';
-import 'package:lh_tonner/services/vw_stock_actual_api.dart';
+import 'package:lh_inventario/services/dim_destino_lh_inventario_api.dart';
+import 'package:lh_inventario/services/dim_tipo_movimiento_lh_inventario_api.dart';
+import 'package:lh_inventario/services/dim_usuario_lh_inventario_api.dart';
+import 'package:lh_inventario/services/fact_movimientos_lh_inventario_api.dart';
+import 'package:lh_inventario/services/vw_stock_actual_api.dart';
 
 class SalidaPage extends StatefulWidget {
   const SalidaPage({super.key});
@@ -24,7 +24,7 @@ class SalidaPage extends StatefulWidget {
 class _SalidaPageState extends State<SalidaPage> {
   List<FactMovimientoSalidaItem> salidas = [];
   bool _cargando = true;
-  /// `id_usuario` → nombre para mostrar (desde `GET /api/dim_usuario_lh_toner`).
+  /// `id_usuario` → nombre para mostrar (desde `GET /api/dim_usuario_lh_inventario`).
   Map<int, String> _nombresPorUsuarioId = {};
 
   /// Incrementa tras guardar salida para forzar nuevo `GET /api/vw_stock_actual` al reabrir el modal.
@@ -38,8 +38,8 @@ class _SalidaPageState extends State<SalidaPage> {
 
   Future<void> _cargarSalidas() async {
     setState(() => _cargando = true);
-    final lista = await FactMovimientosLhTonerApi.listarSalidas();
-    final mapaNombres = await DimUsuarioLhTonerApi.mapaNombresParaMostrarPorId();
+    final lista = await FactMovimientosLhInventarioApi.listarSalidas();
+    final mapaNombres = await DimUsuarioLhInventarioApi.mapaNombresParaMostrarPorId();
     if (mounted) {
       setState(() {
         salidas = lista;
@@ -61,11 +61,11 @@ class _SalidaPageState extends State<SalidaPage> {
 
   /// Stock (vista SQL) + destinos + id tipo "Salida" (dim) para POST.
   static Future<List<Object?>> _cargarStockYDestinos() async {
-    final tipos = await DimTipoMovimientoLhTonerApi.listar();
-    final idSalida = DimTipoMovimientoLhTonerApi.idParaSalida(tipos);
+    final tipos = await DimTipoMovimientoLhInventarioApi.listar();
+    final idSalida = DimTipoMovimientoLhInventarioApi.idParaSalida(tipos);
     return [
       await VwStockActualApi.listar(),
-      await DimDestinoLhTonerApi.listar(),
+      await DimDestinoLhInventarioApi.listar(),
       idSalida,
     ];
   }
@@ -381,8 +381,8 @@ class _SalidaPageState extends State<SalidaPage> {
                   ? snapshot.data![0] as List<VwStockActualRow>
                   : <VwStockActualRow>[];
               final destinos = (snapshot.data != null && snapshot.data!.length > 1)
-                  ? snapshot.data![1] as List<DimDestinoLhTonerRow>
-                  : <DimDestinoLhTonerRow>[];
+                  ? snapshot.data![1] as List<DimDestinoLhInventarioRow>
+                  : <DimDestinoLhInventarioRow>[];
               final idTipoSalida = (snapshot.data != null && snapshot.data!.length > 2)
                   ? snapshot.data![2] as int?
                   : null;
@@ -424,7 +424,7 @@ class _SalidaPageState extends State<SalidaPage> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      const Text('No hay destinos/sucursales (dim_destino). Configure GET /api/destinos_lh_toner.'),
+                      const Text('No hay destinos/sucursales (dim_destino). Configure GET /api/destinos_lh_inventario.'),
                       const SizedBox(height: 20),
                       TextButton(
                         onPressed: () => Navigator.pop(dialogContext),
@@ -450,7 +450,7 @@ class _SalidaPageState extends State<SalidaPage> {
                       const SizedBox(height: 20),
                       const Text(
                         'No se encontró el tipo de movimiento "Salida" en '
-                        'GET /api/dim_tipo_movimiento_lh_toner. Revise DIM_TIPO_MOVIMIENTO_LH_TONER.',
+                        'GET /api/dim_tipo_movimiento_lh_inventario. Revise DIM_TIPO_MOVIMIENTO_LH_INVENTARIO.',
                       ),
                       const SizedBox(height: 20),
                       TextButton(
@@ -508,8 +508,8 @@ class _SalidaPageState extends State<SalidaPage> {
                   ? snapshot.data![0] as List<VwStockActualRow>
                   : <VwStockActualRow>[];
               final destinos = (snapshot.data != null && snapshot.data!.length > 1)
-                  ? snapshot.data![1] as List<DimDestinoLhTonerRow>
-                  : <DimDestinoLhTonerRow>[];
+                  ? snapshot.data![1] as List<DimDestinoLhInventarioRow>
+                  : <DimDestinoLhInventarioRow>[];
               final idTipoSalida = (snapshot.data != null && snapshot.data!.length > 2)
                   ? snapshot.data![2] as int?
                   : null;
@@ -565,7 +565,7 @@ class _SalidaPageState extends State<SalidaPage> {
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              final res = await FactMovimientosLhTonerApi.eliminar(item.idMovimiento);
+              final res = await FactMovimientosLhInventarioApi.eliminar(item.idMovimiento);
               if (!mounted) return;
               if (res.ok) {
                 _cargarSalidas();
@@ -643,7 +643,7 @@ class _SalidaPageState extends State<SalidaPage> {
             onPressed: () async {
               Navigator.pop(ctx);
               for (final item in grupo) {
-                await FactMovimientosLhTonerApi.eliminar(item.idMovimiento);
+                await FactMovimientosLhInventarioApi.eliminar(item.idMovimiento);
                 if (!mounted) return;
               }
               _cargarSalidas();
@@ -669,7 +669,7 @@ class _FormularioSalida extends StatefulWidget {
   });
 
   final List<VwStockActualRow> stockLines;
-  final List<DimDestinoLhTonerRow> destinos;
+  final List<DimDestinoLhInventarioRow> destinos;
   /// Obligatorio para registrar nueva salida; puede ser null al editar (solo PUT).
   final int? idTipoMovSalida;
   final VoidCallback onExito;
@@ -951,7 +951,7 @@ class _FormularioSalidaState extends State<_FormularioSalida> {
         );
         return;
       }
-      final res = await FactMovimientosLhTonerApi.actualizarSalida(
+      final res = await FactMovimientosLhInventarioApi.actualizarSalida(
         widget.movimientoExistente!.idMovimiento,
         idDestino: _destinoIdSeleccionado,
         idProducto: fila.idProducto,
@@ -1006,7 +1006,7 @@ class _FormularioSalidaState extends State<_FormularioSalida> {
     for (var i = 0; i < _filasProducto.length; i++) {
       final fila = _filasProducto[i];
       final cantidad = int.tryParse(fila.cantidadController.text.trim()) ?? 0;
-      final res = await FactMovimientosLhTonerApi.salida(
+      final res = await FactMovimientosLhInventarioApi.salida(
         idProducto: fila.idProducto!,
         cantidad: cantidad,
         idDestino: _destinoIdSeleccionado!,

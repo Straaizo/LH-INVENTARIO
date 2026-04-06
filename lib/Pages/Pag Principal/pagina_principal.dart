@@ -1,12 +1,16 @@
 import 'dart:ui';
-import 'package:lh_tonner/Pages/Login/Login.dart';
-import 'package:lh_tonner/services/api_client.dart';
-import 'package:lh_tonner/services/dim_usuario_lh_toner_api.dart';
+import 'package:lh_inventario/Pages/Login/Login.dart';
+import 'package:lh_inventario/services/api_client.dart';
+import 'package:lh_inventario/services/dim_usuario_lh_inventario_api.dart';
 
+import 'celulares.dart';
 import 'entrada.dart';
+import 'equipos.dart';
+import 'impresoras.dart';
 import 'inventario.dart';
 import 'productos.dart';
 import 'salida.dart';
+import 'tablets.dart';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -40,7 +44,7 @@ class _PaginaPrincipal extends State<PaginaPrincipal> {
   }
 
   Future<void> _cargarNombreDesdeApi() async {
-    final nombre = await DimUsuarioLhTonerApi.obtenerNombreUsuario(widget.email ?? '');
+    final nombre = await DimUsuarioLhInventarioApi.obtenerNombreUsuario(widget.email ?? '');
     if (!mounted) return;
     if (nombre.isNotEmpty && nombre != 'Usuario') {
       setState(() => _nombreEnHeader = nombre);
@@ -117,115 +121,97 @@ class _PaginaPrincipal extends State<PaginaPrincipal> {
       body: Container(
 
         /// FONDO DEGRADADO VERDE //
-        
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF2E7D32), // Verde medio
-              Color(0xFF43A047), // Verde más claro 
+              Color(0xFF2E7D32),
+              Color(0xFF43A047),
             ],
           ),
         ),
 
-        child: SafeArea(  
-            // SafeArea sirve para evitar que el contenido sea ocultado..
+        child: SafeArea(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
 
-
-              // HEADER SUPERIOR //
-
-              Expanded(
-                flex: 1,
+              // ── HEADER SUPERIOR (altura fija) ────────────────────────
+              SizedBox(
+                height: isMobile ? 56 : 64,
                 child: Container(
                   color: const Color(0xFF1B5E20),
-
-                  padding: const EdgeInsetsGeometry.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Row(
                     children: [
-
-                          if (isMobile)
-                            Builder(
-                              builder: (context) => IconButton(
-                                icon: const Icon(Icons.menu, color: Colors.white),
-                                onPressed: () => Scaffold.of(context).openDrawer(),
-                         ),
-                      ),
-
-                     // Titulo
-                    Expanded(
-                      child: Text(
-                        "Sistema Inventario",
-                        style: TextStyle(
-                          fontFamily: GoogleFonts.montserrat().fontFamily,
-                          color: Colors.white,
-                          fontSize: isMobile ? 18 : 26,
+                      if (isMobile)
+                        Builder(
+                          builder: (ctx) => IconButton(
+                            icon: const Icon(Icons.menu, color: Colors.white),
+                            onPressed: () => Scaffold.of(ctx).openDrawer(),
+                          ),
                         ),
-                     ),
-                    ),
-                    if (!isMobile)
-                      Padding(
-                        padding:  EdgeInsets.only(left: 5, top: 7, right: 25),  
-                          child: Text(
+                      Expanded(
+                        child: Text(
+                          "Sistema de Inventario",
+                          style: TextStyle(
+                            fontFamily: GoogleFonts.montserrat().fontFamily,
+                            color: Colors.white,
+                            fontSize: isMobile ? 18 : 24,
+                          ),
+                        ),
+                      ),
+                      if (!isMobile)
+                        Text(
                           "Bienvenido, $_nombreEnHeader",
                           style: TextStyle(
                             fontFamily: GoogleFonts.montserrat().fontFamily,
                             color: Colors.white,
-                            fontSize: 14
-                         ),
+                            fontSize: 14,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),
               ),
 
-
-              // CUERPO PRINCIPAL DE LA APLICACION //
-              
+              // ── CUERPO PRINCIPAL (ocupa el resto de la pantalla) ─────
               Expanded(
-                flex: 9,
-
-                /// ROW divde la pantalla horizontalmente:
-                /// Sidebar | Conenido ///
-                
-                /// SIDE BAR PARA EL MOVIL ///
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                      if (!isMobile)
-                      Expanded(
-                        flex: 1,
+
+                    // Sidebar desktop
+                    if (!isMobile)
+                      SizedBox(
+                        width: 220,
                         child: Container(
                           color: const Color(0xFF2E7D32),
-                          padding: const EdgeInsets.only(top: 25),
-                          child: _sidebarItems(),
+                          child: SingleChildScrollView(
+                            child: _sidebarItems(),
+                          ),
                         ),
                       ),
 
-                    /// SIDE BAR IZQUIERDO ///
-                    /// CUERPO AL LADO DEL SIDE BAR//
-                    
+                    // Contenido principal
                     Expanded(
-                      flex: 4,
-                      child: Container(
-                        alignment: Alignment.topCenter,
-                        padding: const EdgeInsets.only(top: 20),
-                        child: _buildContent(),
-                        ),     
-                      ),
-                    ],
-                  ),
+                      child: _buildContent(),
+                    ),
+
+                  ],
                 ),
-              ],
-            ),          
+              ),
+
+            ],
           ),
-        ),                
-      );                  
-    },                        
-  );
-}                   
+        ),
+      ),
+    );
+  },
+);
+}
+
  
  
  Widget _buildContent() {
@@ -238,6 +224,14 @@ class _PaginaPrincipal extends State<PaginaPrincipal> {
         return const InventarioPage();
       case "Productos":
         return const ProductosPage();
+      case "Equipos":
+        return const EquiposPage();
+      case "Celulares":
+        return const CelularesPage();
+      case "Tablets":
+        return const TabletsPage();
+      case "Impresoras":
+        return const ImpresorasPage();
       default:
         return const SalidaPage();
     }
@@ -252,19 +246,38 @@ class _PaginaPrincipal extends State<PaginaPrincipal> {
  // SIDEBAR ITEMS //
 Widget _sidebarItems() {
     return Column(
-      
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
 
+        const SizedBox(height: 20),
         _buildItem("Salida", Icons.outbox_outlined),
-        const SizedBox(height: 25),
+        const SizedBox(height: 8),
         _buildItem("Entrada", Icons.move_to_inbox_outlined),
-        const SizedBox(height: 25),
+        const SizedBox(height: 8),
         _buildItem("Inventario", Icons.inventory_outlined),
-        const SizedBox(height: 25),
+        const SizedBox(height: 8),
         _buildItem("Productos", Icons.local_shipping_outlined),
-        const SizedBox(height: 35),
+        const SizedBox(height: 12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Divider(color: Colors.white.withOpacity(0.2), height: 1),
+        ),
+        const SizedBox(height: 12),
+        _buildItem("Equipos", Icons.computer_outlined),
+        const SizedBox(height: 8),
+        _buildItem("Celulares", Icons.phone_android_outlined),
+        const SizedBox(height: 8),
+        _buildItem("Tablets", Icons.tablet_android_outlined),
+        const SizedBox(height: 8),
+        _buildItem("Impresoras", Icons.print_outlined),
+        const SizedBox(height: 12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Divider(color: Colors.white.withOpacity(0.2), height: 1),
+        ),
+        const SizedBox(height: 12),
         _buildItem("Salir", Icons.logout_outlined),
+        const SizedBox(height: 16),
 
       ],
     );

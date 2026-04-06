@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lh_tonner/Pages/Pag%20Principal/pagina_principal.dart';
-import 'package:lh_tonner/services/api_client.dart';
-import 'package:lh_tonner/services/dim_usuario_lh_toner_api.dart';
+import 'package:lh_inventario/Pages/Pag%20Principal/pagina_principal.dart';
+import 'package:lh_inventario/services/api_client.dart';
+import 'package:lh_inventario/services/dim_usuario_lh_inventario_api.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -93,7 +93,7 @@ class _loginPageState extends State<Login> {
     if (_emailError != null || _contraseniaError != null) return;
 
     setState(() => _isLoading = true);
-    final result = await DimUsuarioLhTonerApi.validar(email, contrasenia);
+    final result = await DimUsuarioLhInventarioApi.validar(email, contrasenia);
 
     if (!mounted) return;
     setState(() => _isLoading = false);
@@ -161,7 +161,7 @@ class _loginPageState extends State<Login> {
     
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'LH TONNER',
+      title: 'LH INVENTARIO',
       home: Scaffold(
         body: Stack(
         children: [
@@ -237,7 +237,7 @@ class _loginPageState extends State<Login> {
                           // SUB TITULO //
 
                            Text(
-                            'Sistema Inventario',
+                            'LH Inventario',
                             style: TextStyle(
                               fontFamily: GoogleFonts.montserrat().fontFamily,
                               color: Colors.white70,

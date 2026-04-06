@@ -16,7 +16,7 @@ npm install -g firebase-tools
 
 ## 2. Iniciar sesión en Firebase
 
-Desde la carpeta del proyecto (`lh_tonner`):
+Desde la carpeta del proyecto Flutter (p. ej. `lh_tonner` o `lh_inventario` si ya renombraste la carpeta):
 
 ```bash
 cd lh_tonner
@@ -62,7 +62,7 @@ Al terminar, la CLI mostrará la URL de tu sitio (por ejemplo `https://tu-proyec
 
 ---
 
-## Resumen de comandos (desde `lh_tonner`)
+## Resumen de comandos (desde la carpeta del proyecto Flutter)
 
 ```bash
 firebase login

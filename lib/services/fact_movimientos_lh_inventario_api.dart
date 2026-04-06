@@ -1,6 +1,6 @@
-import 'package:lh_tonner/services/api_client.dart';
+import 'package:lh_inventario/services/api_client.dart';
 
-/// Fila del listado `GET /api/fact_movimientos_lh_toner` → `{ "data": [ ... ] }`.
+/// Fila del listado `GET /api/fact_movimientos_lh_inventario` → `{ "data": [ ... ] }`.
 /// En UI de inventario solo se usan [nombreProducto] y [cantidad].
 class FactMovimientoListadoItem {
   const FactMovimientoListadoItem({
@@ -99,7 +99,7 @@ class FactMovimientoListadoItem {
   }
 }
 
-/// Proyección SALIDA desde [FACT_MOVIMIENTOS_LH_TONER] + JOINs.
+/// Proyección SALIDA desde [FACT_MOVIMIENTOS_LH_INVENTARIO] + JOINs.
 class FactMovimientoSalidaItem {
   const FactMovimientoSalidaItem({
     required this.idMovimiento,
@@ -165,11 +165,11 @@ class FactMovimientoStockError {
   final int? cantidadSolicitada;
 }
 
-/// [FACT_MOVIMIENTOS_LH_TONER] — mismas rutas bajo `/api/fact_movimientos_lh_toner` y `/api/movimientos_lh_toner`.
-class FactMovimientosLhTonerApi {
-  FactMovimientosLhTonerApi._();
+/// [FACT_MOVIMIENTOS_LH_INVENTARIO] — mismas rutas bajo `/api/fact_movimientos_lh_inventario` y `/api/movimientos_lh_inventario`.
+class FactMovimientosLhInventarioApi {
+  FactMovimientosLhInventarioApi._();
 
-  static const String _path = '/api/fact_movimientos_lh_toner';
+  static const String _path = '/api/fact_movimientos_lh_inventario';
 
   static FactMovimientoStockError? _parseErrorStock(ApiResponse res) {
     if (res.statusCode != 400 || res.data is! Map) return null;
