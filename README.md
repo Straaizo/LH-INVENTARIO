@@ -126,44 +126,8 @@ src/
     └── csv.js                 # Helpers para exportación y formateo de fechas
 ```
 
----
 
-## Variables de entorno
 
-Crear un archivo `.env` en la raíz del proyecto:
-
-```env
-VITE_API_URL=https://tu-api.run.app
-VITE_API_TIMEOUT=15000
-```
-
----
-
-## Instalación y desarrollo local
-
-```bash
-# Instalar dependencias
-npm install
-
-# Levantar servidor de desarrollo
-npm run dev
-
-# Compilar para producción
-npm run build
-```
-
----
-
-## Deploy
-
-El proyecto se despliega en **Firebase Hosting**. Los assets estáticos tienen caché de un año (`immutable`), mientras que el HTML se sirve sin caché para garantizar actualizaciones inmediatas.
-
-```bash
-npm run build
-firebase deploy --only hosting
-```
-
----
 
 ## Backend
 
