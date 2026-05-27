@@ -133,7 +133,7 @@ src/
 
 Este frontend consume una API REST desarrollada en **FastAPI**, desplegada en **Google Cloud Run**.
 
-➡️ Repositorio de la API: [API-LH-INVENTARIO](https://github.com/Straaizo/API-LH-INVENTARIO)
+➡️ Repositorio de la API: [API-LH-INVENTARIO](https://github.com/Straaizo/LH-API-INVENTARIO)
 
 ---
 
