@@ -17,7 +17,6 @@
   <img src="https://img.shields.io/badge/Vite-8-646CFF?style=for-the-badge&logo=vite&logoColor=white" />
   <img src="https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" />
   <img src="https://img.shields.io/badge/Firebase_Hosting-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" />
-  <img src="https://img.shields.io/badge/Axios-5A29E4?style=for-the-badge&logo=axios&logoColor=white" />
   <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" />
 </p>
 
@@ -127,50 +126,14 @@ src/
     └── csv.js                 # Helpers para exportación y formateo de fechas
 ```
 
----
 
-## Variables de entorno
 
-Crear un archivo `.env` en la raíz del proyecto:
-
-```env
-VITE_API_URL=https://tu-api.run.app
-VITE_API_TIMEOUT=15000
-```
-
----
-
-## Instalación y desarrollo local
-
-```bash
-# Instalar dependencias
-npm install
-
-# Levantar servidor de desarrollo
-npm run dev
-
-# Compilar para producción
-npm run build
-```
-
----
-
-## Deploy
-
-El proyecto se despliega en **Firebase Hosting**. Los assets estáticos tienen caché de un año (`immutable`), mientras que el HTML se sirve sin caché para garantizar actualizaciones inmediatas.
-
-```bash
-npm run build
-firebase deploy --only hosting
-```
-
----
 
 ## Backend
 
 Este frontend consume una API REST desarrollada en **FastAPI**, desplegada en **Google Cloud Run**.
 
-➡️ Repositorio de la API: [API-LH-INVENTARIO](https://github.com/Straaizo/API-LH-INVENTARIO)
+➡️ Repositorio de la API: [API-LH-INVENTARIO](https://github.com/Straaizo/LH-API-INVENTARIO)
 
 ---
 
