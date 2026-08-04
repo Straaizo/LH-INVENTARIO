@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react'
 import { Monitor } from 'lucide-react'
 import PaginaActivos, { EstadoBadge } from '../components/PaginaActivos'
 import { equiposApi } from '../services/activosApi'
+import { listarDestinos } from '../services/catalogosApi'
 
 const COLUMNAS = [
   { key: 'codigo',      label: 'Código',      truncate: true },
@@ -11,7 +13,7 @@ const COLUMNAS = [
   { key: 'responsable', label: 'Responsable', truncate: true },
 ]
 
-const CAMPOS = [
+const CAMPOS_BASE = [
   { key: 'codigo',           apiKey: 'codigo_equipo',     label: 'Código' },
   { key: 'tipo',             label: 'Tipo' },
   { key: 'marca',            label: 'Marca' },
@@ -30,6 +32,7 @@ const CAMPOS = [
     key: 'estado', label: 'Estado',
     opciones: [
       { value: 'Activo',        label: 'Activo' },
+      { value: 'Disponible',    label: 'Disponible' },
       { value: 'En reparación', label: 'En reparación' },
       { value: 'De baja',       label: 'De baja' },
       { value: 'Inactivo',      label: 'Inactivo' },
@@ -46,11 +49,21 @@ const PASOS = [
 ]
 
 export default function Equipos() {
+  const [destinos, setDestinos] = useState([])
+
+  useEffect(() => { listarDestinos().then(setDestinos) }, [])
+
+  const campos = CAMPOS_BASE.map(c =>
+    c.key === 'ubicacion'
+      ? { ...c, opciones: destinos.map(d => ({ value: d.nombre, label: d.nombre })) }
+      : c
+  )
+
   return (
     <PaginaActivos
       titulo="Equipos" subtitulo="Gestión de equipos informáticos"
       icono={Monitor} api={equiposApi}
-      columnas={COLUMNAS} campos={CAMPOS} pasos={PASOS}
+      columnas={COLUMNAS} campos={campos} pasos={PASOS}
       campoId="codigo"
     />
   )

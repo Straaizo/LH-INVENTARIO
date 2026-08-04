@@ -1,11 +1,19 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, LogIn, AlertCircle } from 'lucide-react'
 import { useAuth } from '../context/useAuth'
+import http from '../services/apiClient'
 
 export default function Login() {
   const { doLogin, loading } = useAuth()
   const navigate = useNavigate()
+  const [slowConn, setSlowConn] = useState(false)
+  const slowTimer = useRef(null)
+
+  // Warmup: despierta Cloud Run mientras el usuario escribe sus credenciales
+  useEffect(() => {
+    http.get('/api/auth/me', { timeout: 3000 }).catch(() => {})
+  }, [])
 
   useEffect(() => {
     const meta = document.querySelector('meta[name="theme-color"]')
@@ -38,12 +46,17 @@ export default function Login() {
     e.preventDefault()
     setErrGeneral(null)
     setErrAcceso(null)
+    setSlowConn(false)
     let valid = true
     if (!identificador.trim()) { setErrEmail('Ingrese su correo o usuario'); valid = false }
     if (!contrasenia)          { setErrPass('Ingrese su contraseña');        valid = false }
     if (!valid) return
 
+    slowTimer.current = setTimeout(() => setSlowConn(true), 3000)
     const res = await doLogin(identificador.trim(), contrasenia)
+    clearTimeout(slowTimer.current)
+    setSlowConn(false)
+
     if (res.ok) {
       navigate('/', { replace: true })
     } else if (res.message?.toLowerCase().includes('acceso') || res.message?.toLowerCase().includes('desactivada')) {
@@ -162,6 +175,13 @@ export default function Login() {
               : <LogIn size={18} />}
             {loading ? 'Cargando...' : 'Iniciar Sesión'}
           </button>
+
+          {slowConn && (
+            <p className="text-center text-xs font-medium animate-pulse"
+              style={{ color: 'rgba(255,255,255,0.75)', textShadow: '0 1px 4px rgba(0,0,0,0.6)' }}>
+              Conectando con el servidor, un momento...
+            </p>
+          )}
         </form>
 
         <p className="text-white text-xs text-center mt-2 font-medium"

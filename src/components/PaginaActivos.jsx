@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, Edit2, Trash2, Search, X, ChevronLeft, ChevronRight, AlertTriangle, Download } from 'lucide-react'
+import { Plus, Edit2, Trash2, Search, X, ChevronLeft, ChevronRight, AlertTriangle, Download, Star } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { descargarCsv } from '../utils/csv'
 
@@ -33,7 +33,7 @@ function formatCell(val) {
 const ESTADO_CFG = {
   'Activo':        { dot: 'bg-green-500',  badge: 'bg-green-100  text-green-800  border-green-200  dark:bg-green-500/20  dark:text-green-400  dark:border-green-500/30'  },
   'Asignado':      { dot: 'bg-green-500',  badge: 'bg-green-100  text-green-800  border-green-200  dark:bg-green-500/20  dark:text-green-400  dark:border-green-500/30'  },
-  'Disponible':    { dot: 'bg-teal-500',   badge: 'bg-teal-100   text-teal-800   border-teal-200   dark:bg-teal-500/20   dark:text-teal-400   dark:border-teal-500/30'   },
+  'Disponible':    { icon: Star, iconClass: 'fill-yellow-400 text-yellow-400', badge: 'bg-yellow-50 text-yellow-800 border-yellow-200 dark:bg-yellow-500/10 dark:text-yellow-300 dark:border-yellow-500/30' },
   'En reparación': { dot: 'bg-orange-500', badge: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-500/20 dark:text-orange-400 dark:border-orange-500/30' },
   'En revisión':   { dot: 'bg-blue-500',   badge: 'bg-blue-100   text-blue-800   border-blue-200   dark:bg-blue-500/20   dark:text-blue-400   dark:border-blue-500/30'   },
   'De baja':       { dot: 'bg-red-500',    badge: 'bg-red-100    text-red-800    border-red-200    dark:bg-red-500/20    dark:text-red-400    dark:border-red-500/30'    },
@@ -46,7 +46,9 @@ export function EstadoBadge({ estado }) {
   const c = ESTADO_CFG[estado] || ESTADO_DEFAULT
   return (
     <span style={{ minWidth: '7.5rem' }} className={`inline-flex items-center justify-center gap-1.5 text-xs py-0.5 rounded-full border font-semibold ${c.badge}`}>
-      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${c.dot}`} />
+      {c.icon
+        ? <c.icon size={11} strokeWidth={1.5} className={`flex-shrink-0 ${c.iconClass}`} />
+        : <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${c.dot}`} />}
       {estado || '—'}
     </span>
   )
@@ -430,9 +432,10 @@ function ModalWizard({ mode, item, campos, pasos, api, titulo, onClose, onExito 
     }
   }
 
-  const inputBase = 'w-full px-3 py-2.5 rounded-xl text-sm outline-none transition-all bg-white dark:bg-white/5 text-gray-700 dark:text-slate-200 focus:ring-1'
-  const inputOk   = 'border border-gray-200 dark:border-white/10 focus:border-green-500 dark:focus:border-green-500 focus:ring-green-200 dark:focus:ring-green-500/20'
-  const inputErr  = 'border border-red-400 dark:border-red-500 focus:border-red-400 focus:ring-red-200 dark:focus:ring-red-500/20'
+  const inputBase  = 'w-full px-3 py-2.5 rounded-xl text-sm outline-none transition-all bg-white dark:bg-white/5 text-gray-700 dark:text-slate-200 focus:ring-1'
+  const selectBase = 'w-full px-3 py-2.5 rounded-xl text-sm outline-none transition-all bg-white dark:bg-[#1E2C3D] text-gray-700 dark:text-slate-200 focus:ring-1 dark:[color-scheme:dark]'
+  const inputOk    = 'border border-gray-200 dark:border-white/10 focus:border-green-500 dark:focus:border-green-500 focus:ring-green-200 dark:focus:ring-green-500/20'
+  const inputErr   = 'border border-red-400 dark:border-red-500 focus:border-red-400 focus:ring-red-200 dark:focus:ring-red-500/20'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
@@ -469,7 +472,7 @@ function ModalWizard({ mode, item, campos, pasos, api, titulo, onClose, onExito 
                 </label>
                 {c.opciones ? (
                   <select value={form[c.key]} onChange={e => setField(c.key, e.target.value)}
-                    className={`${inputBase} ${inputOk} dark:[color-scheme:dark]`}>
+                    className={`${selectBase} ${inputOk}`}>
                     {c.opciones.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                 ) : (

@@ -15,9 +15,11 @@ import Equipos    from './pages/Equipos'
 import Celulares  from './pages/Celulares'
 import Tablets    from './pages/Tablets'
 import Impresoras from './pages/Impresoras'
+import Analisis   from './pages/Analisis'
 
 const PAGE_MAP = {
   dashboard:  <Home />,
+  analisis:   <Analisis />,
   salida:     <Salida />,
   entrada:    <Entrada />,
   inventario: <Inventario />,

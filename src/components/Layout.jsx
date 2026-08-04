@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import {
   LogOut, Menu, X, PackageOpen, PackagePlus, LayoutList,
   ShoppingBag, Monitor, Smartphone, Tablet, Printer,
-  LayoutDashboard, Sun, Moon, Clock, WifiOff,
+  LayoutDashboard, Sun, Moon, Clock, WifiOff, BarChart2,
 } from 'lucide-react'
 import { useAuth } from '../context/useAuth'
 import { useTheme } from '../context/ThemeContext'
@@ -10,6 +10,7 @@ import { listarStock } from '../services/inventarioApi'
 
 const NAV_ITEMS = [
   { key: 'dashboard',  label: 'Inicio',     icon: LayoutDashboard },
+  { key: 'analisis',   label: 'Análisis',   icon: BarChart2 },
   { section: 'Movimientos' },
   { key: 'salida',     label: 'Salida',     icon: PackageOpen },
   { key: 'entrada',    label: 'Entrada',    icon: PackagePlus },
