@@ -14,7 +14,6 @@ const COLUMNAS = [
 
 const CAMPOS = [
   { key: 'numero',        label: 'Número' },
-  { key: 'identificador', label: 'Identificador' },
   { key: 'marca',         label: 'Marca' },
   { key: 'modelo',        label: 'Modelo' },
   { key: 'tipoCelular',   apiKey: 'tipo_celular', label: 'Tipo' },
@@ -22,6 +21,7 @@ const CAMPOS = [
   { key: 'imei',          label: 'IMEI' },
   { key: 'fechaEntrega',  apiKey: 'fecha_entrega', label: 'Fecha entrega' },
   { key: 'responsable',   label: 'Responsable', fullWidth: true },
+  { key: 'comentario',    label: 'Comentario',  fullWidth: true, opcional: true },
   {
     key: 'estado', label: 'Estado',
     opciones: [
@@ -34,9 +34,9 @@ const CAMPOS = [
 ]
 
 const PASOS = [
-  { titulo: 'Identificación', campos: ['numero', 'identificador', 'marca', 'modelo', 'tipoCelular'] },
+  { titulo: 'Identificación', campos: ['numero', 'marca', 'modelo', 'tipoCelular'] },
   { titulo: 'Detalles',       campos: ['compania', 'imei', 'fechaEntrega'] },
-  { titulo: 'Asignación',     campos: ['responsable', 'estado'] },
+  { titulo: 'Asignación',     campos: ['responsable', 'estado', 'comentario'] },
 ]
 
 export default function Celulares() {

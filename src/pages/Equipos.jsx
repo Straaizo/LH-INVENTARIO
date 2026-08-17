@@ -28,10 +28,11 @@ const CAMPOS_BASE = [
   { key: 'fechaRevision',    apiKey: 'fecha_revision',    label: 'Fecha revisión' },
   { key: 'ubicacion',        label: 'Ubicación',    fullWidth: true },
   { key: 'responsable',      label: 'Responsable',  fullWidth: true },
+  { key: 'comentario',       label: 'Comentario',   fullWidth: true, opcional: true },
   {
     key: 'estado', label: 'Estado',
     opciones: [
-      { value: 'Activo',        label: 'Activo' },
+      { value: 'Asignado',      label: 'Asignado' },
       { value: 'Disponible',    label: 'Disponible' },
       { value: 'En reparación', label: 'En reparación' },
       { value: 'De baja',       label: 'De baja' },
@@ -45,7 +46,7 @@ const PASOS = [
   { titulo: 'Identificación', campos: ['codigo', 'tipo', 'marca', 'modelo'] },
   { titulo: 'Hardware',       campos: ['procesador', 'ram', 'discoDuro', 'sistemaOperativo'] },
   { titulo: 'Software',       campos: ['office', 'antivirus', 'numeroSerie', 'fechaRevision'] },
-  { titulo: 'Asignación',     campos: ['ubicacion', 'responsable', 'estado'] },
+  { titulo: 'Asignación',     campos: ['ubicacion', 'responsable', 'estado', 'comentario'] },
 ]
 
 export default function Equipos() {

@@ -17,10 +17,6 @@ function makeApi(path, parseRow) {
       try { await http.put(`${path}/${id}`, body); return { ok: true } }
       catch (err) { return { ok: false, message: err.response?.data?.message || 'Error al actualizar' } }
     },
-    async eliminar(id) {
-      try { await http.delete(`${path}/${id}`); return { ok: true } }
-      catch (err) { return { ok: false, message: err.response?.data?.message || 'Error al eliminar' } }
-    },
   }
 }
 
@@ -41,6 +37,7 @@ export const equiposApi = makeApi('/api/activos/equipos', (r) => ({
   numeroSerie:     r.numero_serie ?? r.numeroSerie ?? '',
   fechaRevision:   r.fecha_revision ?? r.fechaRevision ?? '',
   responsable:     r.responsable ?? r.usuario_nombre ?? '',
+  comentario:      r.comentario ?? '',
 }))
 
 export const celularesApi = makeApi('/api/activos/celulares', (r) => ({
@@ -54,7 +51,7 @@ export const celularesApi = makeApi('/api/activos/celulares', (r) => ({
   imei:           r.imei ?? '',
   fechaEntrega:   r.fecha_entrega ?? '',
   responsable:    r.responsable ?? '',
-  identificador:  r.identificador ?? '',
+  comentario:     r.comentario ?? '',
 }))
 
 export const tabletsApi = makeApi('/api/activos/tablets', (r) => ({

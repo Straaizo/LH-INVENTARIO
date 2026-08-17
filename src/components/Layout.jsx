@@ -7,6 +7,7 @@ import {
 import { useAuth } from '../context/useAuth'
 import { useTheme } from '../context/ThemeContext'
 import { listarStock } from '../services/inventarioApi'
+import { capitalizarNombre } from '../utils/texto'
 
 const NAV_ITEMS = [
   { key: 'dashboard',  label: 'Inicio',     icon: LayoutDashboard },
@@ -168,7 +169,7 @@ export default function Layout({ page, setPage, children }) {
             </button>
             <div className="px-5 py-5 border-b border-slate-200 dark:border-white/8 flex-shrink-0">
               <p className="text-slate-400 dark:text-slate-500 text-xs">Bienvenido,</p>
-              <p className="text-slate-800 dark:text-white font-semibold text-sm mt-0.5 truncate">{user?.nombre || 'Usuario'}</p>
+              <p className="text-slate-800 dark:text-white font-semibold text-sm mt-0.5 truncate">{capitalizarNombre(user?.nombre) || 'Usuario'}</p>
             </div>
             <NavList items={NAV_ITEMS} page={page} onNav={handleNav} criticalCount={criticalCount} />
             {logoutBtn}
@@ -192,7 +193,7 @@ export default function Layout({ page, setPage, children }) {
           <div className="hidden md:flex flex-col flex-1 justify-center">
             <p className="text-slate-400 dark:text-slate-500 text-[11px] font-medium leading-none">Bienvenido,</p>
             <p className="text-slate-800 dark:text-white font-semibold text-base leading-snug mt-0.5">
-              {user?.nombre || 'Usuario'}
+              {capitalizarNombre(user?.nombre) || 'Usuario'}
             </p>
           </div>
 

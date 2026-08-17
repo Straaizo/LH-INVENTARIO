@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, Edit2, Trash2, Search, X, ChevronLeft, ChevronRight, AlertTriangle, Download, Star } from 'lucide-react'
+import { Plus, Edit2, Pencil, Check, Search, X, ChevronLeft, ChevronRight, AlertTriangle, Download, Star } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { descargarCsv } from '../utils/csv'
 
@@ -91,7 +91,6 @@ export default function PaginaActivos({
   const [page,     setPage]     = useState(1)
   const [detalle,  setDetalle]  = useState(null)
   const [modal,    setModal]    = useState(null)
-  const [confirm,  setConfirm]  = useState(null)
 
   async function cargar() {
     setLoading(true)
@@ -106,13 +105,12 @@ export default function PaginaActivos({
   useEffect(() => {
     function onKey(e) {
       if (e.key !== 'Escape') return
-      if (confirm)        { setConfirm(null); return }
       if (modal)          { setModal(null);   return }
       if (detalle)        { setDetalle(null); return }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [confirm, modal, detalle])
+  }, [modal, detalle])
 
   const filtrados = busqueda.trim()
     ? items.filter(item =>
@@ -128,16 +126,6 @@ export default function PaginaActivos({
   const totalPages = Math.max(1, Math.ceil(filtrados.length / PAGE_SIZE))
   const safePage   = Math.min(page, totalPages)
   const paginados  = filtrados.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
-
-  async function handleEliminar(item) {
-    const res = await api.eliminar(item.id)
-    if (res.ok) {
-      setConfirm(null); setDetalle(null); cargar()
-      toast.success('Eliminado correctamente')
-    } else {
-      toast.error(res.message || 'Error al eliminar')
-    }
-  }
 
   function abrirFormulario(mode, item = null) {
     setDetalle(null)
@@ -268,9 +256,10 @@ export default function PaginaActivos({
           campos={campos.length ? campos : columnas}
           campoId={campoId || columnas[0]?.key}
           titulo={titulo}
+          api={api}
           onClose={() => setDetalle(null)}
           onEdit={() => abrirFormulario('editar', detalle)}
-          onDelete={() => setConfirm(detalle)}
+          onEstadoActualizado={nuevoEstado => { setDetalle(d => ({ ...d, estado: nuevoEstado })); cargar() }}
         />
       )}
 
@@ -291,36 +280,39 @@ export default function PaginaActivos({
               />
             )
       )}
-
-      {/* Confirmar eliminar */}
-      {confirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-white dark:bg-[#1A2332] rounded-xl p-6 w-80 shadow-2xl">
-            <h3 className="font-semibold text-gray-800 dark:text-white mb-2">Eliminar {titulo.toLowerCase()}</h3>
-            <p className="text-gray-600 dark:text-slate-400 text-sm mb-5">¿Confirmar eliminación? Esta acción no se puede deshacer.</p>
-            <div className="flex gap-3">
-              <button onClick={() => setConfirm(null)}
-                className="flex-1 py-2 border border-gray-300 dark:border-white/10 rounded-lg text-gray-700 dark:text-slate-300 text-sm hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer">Cancelar</button>
-              <button onClick={() => handleEliminar(confirm)}
-                className="flex-1 py-2 bg-red-500 hover:bg-red-600 rounded-lg text-white text-sm font-semibold cursor-pointer">Eliminar</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
 
 // ── Modal detalle ─────────────────────────────────────────────────────────────
-function ModalDetalle({ item, campos, campoId, titulo, onClose, onEdit, onDelete }) {
+function ModalDetalle({ item, campos, campoId, titulo, api, onClose, onEdit, onEstadoActualizado }) {
   const idValue = item[campoId] || `#${item.id}`
   const camposSinEstado = campos.filter(c => c.key !== 'estado' && c.key !== campoId)
+  const estadoCampo = campos.find(c => c.key === 'estado')
+
+  const [editandoEstado, setEditandoEstado] = useState(false)
+  const [nuevoEstado,    setNuevoEstado]    = useState(item.estado || '')
+  const [guardandoEstado, setGuardandoEstado] = useState(false)
 
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
+
+  async function guardarEstado() {
+    if (nuevoEstado === item.estado) { setEditandoEstado(false); return }
+    setGuardandoEstado(true)
+    const res = await api.actualizar(item.id, { estado: nuevoEstado })
+    setGuardandoEstado(false)
+    if (res.ok) {
+      toast.success('Estado actualizado')
+      setEditandoEstado(false)
+      onEstadoActualizado?.(nuevoEstado)
+    } else {
+      toast.error(res.message || 'Error al actualizar el estado')
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
@@ -329,7 +321,34 @@ function ModalDetalle({ item, campos, campoId, titulo, onClose, onEdit, onDelete
           <div>
             <p className="text-[11px] text-gray-400 dark:text-slate-500 font-semibold uppercase tracking-widest mb-1">{titulo}</p>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{idValue}</h2>
-            {item.estado && <EstadoBadge estado={item.estado} />}
+            {editandoEstado ? (
+              <div className="flex items-center gap-1.5">
+                <select value={nuevoEstado} onChange={e => setNuevoEstado(e.target.value)} autoFocus
+                  className="px-2 py-1.5 rounded-lg text-xs font-medium outline-none border border-gray-200 dark:border-white/10 bg-white dark:bg-[#1E2C3D] text-gray-700 dark:text-slate-200 focus:border-green-500 dark:[color-scheme:dark]">
+                  {estadoCampo.opciones.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+                <button onClick={guardarEstado} disabled={guardandoEstado} title="Guardar estado"
+                  className="p-1.5 rounded-lg text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-500/10 cursor-pointer disabled:opacity-50">
+                  <Check size={19} />
+                </button>
+                <button onClick={() => setEditandoEstado(false)} disabled={guardandoEstado} title="Cancelar"
+                  className="p-1.5 rounded-lg text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 cursor-pointer">
+                  <X size={19} />
+                </button>
+              </div>
+            ) : (
+              item.estado && (
+                <div className="flex items-center gap-1.5">
+                  <EstadoBadge estado={item.estado} />
+                  {estadoCampo?.opciones && (
+                    <button onClick={() => { setNuevoEstado(item.estado); setEditandoEstado(true) }} title="Cambiar estado"
+                      className="p-1 rounded text-gray-400 dark:text-slate-500 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-100 dark:hover:bg-white/5 cursor-pointer transition-colors">
+                      <Pencil size={17} />
+                    </button>
+                  )}
+                </div>
+              )
+            )}
           </div>
           <button onClick={onClose} className="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 cursor-pointer mt-1">
             <X size={22} />
@@ -353,10 +372,6 @@ function ModalDetalle({ item, campos, campoId, titulo, onClose, onEdit, onDelete
           <button onClick={onEdit}
             className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-green-500 text-green-700 dark:text-green-400 text-sm font-semibold hover:bg-green-50 dark:hover:bg-green-500/10 transition-colors cursor-pointer">
             <Edit2 size={15} /> Editar
-          </button>
-          <button onClick={onDelete}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors cursor-pointer">
-            <Trash2 size={15} /> Eliminar
           </button>
         </div>
       </div>

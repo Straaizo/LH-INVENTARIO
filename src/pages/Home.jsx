@@ -4,6 +4,7 @@ import { listarStock } from '../services/inventarioApi'
 import { listarSalidas } from '../services/movimientosApi'
 import { useAuth } from '../context/useAuth'
 import { formatearFechahora } from '../utils/csv'
+import { capitalizarNombre } from '../utils/texto'
 
 const K_CRITICO = 3
 const K_BAJO    = 6
@@ -51,7 +52,7 @@ export default function Home() {
 
       <div>
         <h2 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-white">
-          Hola, {user?.nombre?.split(' ')[0] || 'Usuario'} 👋
+          Hola, {capitalizarNombre(user?.nombre?.split(' ')[0]) || 'Usuario'} 👋
         </h2>
         <p className="text-slate-500 dark:text-white/50 text-sm mt-0.5 capitalize">{fechaStr}</p>
       </div>
