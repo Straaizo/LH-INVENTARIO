@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
-import { Plus, Edit2, Pencil, Check, Search, X, ChevronLeft, ChevronRight, AlertTriangle, Download, Star } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Plus, Edit2, Pencil, Check, Search, X, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, AlertTriangle, Download, Star, SlidersHorizontal } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { descargarCsv } from '../utils/csv'
+import { descargarXlsx } from '../utils/excel'
 
 function toInputDate(val) {
   if (typeof val === 'string' && /^\d{2}-\d{2}-\d{4}$/.test(val)) {
@@ -36,7 +36,7 @@ const ESTADO_CFG = {
   'Disponible':    { icon: Star, iconClass: 'fill-yellow-400 text-yellow-400', badge: 'bg-yellow-50 text-yellow-800 border-yellow-200 dark:bg-yellow-500/10 dark:text-yellow-300 dark:border-yellow-500/30' },
   'En reparación': { dot: 'bg-orange-500', badge: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-500/20 dark:text-orange-400 dark:border-orange-500/30' },
   'En revisión':   { dot: 'bg-blue-500',   badge: 'bg-blue-100   text-blue-800   border-blue-200   dark:bg-blue-500/20   dark:text-blue-400   dark:border-blue-500/30'   },
-  'De baja':       { dot: 'bg-red-500',    badge: 'bg-red-100    text-red-800    border-red-200    dark:bg-red-500/20    dark:text-red-400    dark:border-red-500/30'    },
+  'De baja':       { dot: 'bg-slate-400',  badge: 'bg-slate-100  text-slate-600  border-slate-200  dark:bg-slate-500/20  dark:text-slate-400  dark:border-slate-500/30'  },
   'Inactivo':      { dot: 'bg-slate-400',  badge: 'bg-slate-100  text-slate-600  border-slate-200  dark:bg-slate-500/20  dark:text-slate-400  dark:border-slate-500/30'  },
   'Robado':        { dot: 'bg-yellow-500', badge: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-400 dark:border-yellow-500/30' },
 }
@@ -83,6 +83,7 @@ export default function PaginaActivos({
   campos       = [],
   pasos        = null,
   campoId      = null,
+  filtros      = [],
   ModalFormulario = null,
 }) {
   const [items,    setItems]    = useState([])
@@ -91,6 +92,10 @@ export default function PaginaActivos({
   const [page,     setPage]     = useState(1)
   const [detalle,  setDetalle]  = useState(null)
   const [modal,    setModal]    = useState(null)
+  const [sortDir,  setSortDir]  = useState(null) // null | 'asc' | 'desc'
+  const [filtrosActivos, setFiltrosActivos] = useState({}) // { key: Set(valores) }
+  const [panelFiltros,   setPanelFiltros]   = useState(false)
+  const filtroRef = useRef(null)
 
   async function cargar() {
     setLoading(true)
@@ -101,48 +106,114 @@ export default function PaginaActivos({
 
   useEffect(() => { cargar() }, [])
 
-  // Escape para cerrar modales
+  // Escape para cerrar modales / panel de filtros
   useEffect(() => {
     function onKey(e) {
       if (e.key !== 'Escape') return
+      if (panelFiltros)   { setPanelFiltros(false); return }
       if (modal)          { setModal(null);   return }
       if (detalle)        { setDetalle(null); return }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [modal, detalle])
+  }, [panelFiltros, modal, detalle])
 
-  const filtrados = busqueda.trim()
+  // Cerrar panel de filtros al hacer click afuera
+  useEffect(() => {
+    if (!panelFiltros) return
+    function onClickFuera(e) { if (filtroRef.current && !filtroRef.current.contains(e.target)) setPanelFiltros(false) }
+    document.addEventListener('mousedown', onClickFuera)
+    return () => document.removeEventListener('mousedown', onClickFuera)
+  }, [panelFiltros])
+
+  const camposBusqueda = campos.length ? campos : columnas
+
+  const porBusqueda = busqueda.trim()
     ? items.filter(item =>
-        columnas.some(col => {
+        camposBusqueda.some(col => {
           const v = item[col.key]
           return v && String(v).toLowerCase().includes(busqueda.toLowerCase())
         })
       )
     : items
 
+  const totalFiltrosActivos = Object.values(filtrosActivos).reduce((sum, set) => sum + (set?.size || 0), 0)
+
+  const filtrados = totalFiltrosActivos > 0
+    ? porBusqueda.filter(item =>
+        Object.entries(filtrosActivos).every(([key, valores]) =>
+          !valores || valores.size === 0 || valores.has(String(item[key] ?? ''))
+        )
+      )
+    : porBusqueda
+
+  function opcionesFiltro(key) {
+    const estadoCampo = key === 'estado' ? campos.find(c => c.key === 'estado') : null
+    const universo = estadoCampo?.opciones
+      ? estadoCampo.opciones.map(o => o.value)
+      : [...new Set(items.map(i => i[key]).filter(Boolean))]
+          .sort((a, b) => String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' }))
+    return universo.map(valor => ({
+      valor,
+      count: porBusqueda.filter(i => String(i[key] ?? '') === String(valor)).length,
+    }))
+  }
+
+  function toggleValorFiltro(key, valor) {
+    setFiltrosActivos(prev => {
+      const next = { ...prev }
+      const set  = new Set(next[key] || [])
+      if (set.has(valor)) set.delete(valor)
+      else set.add(valor)
+      next[key] = set
+      return next
+    })
+    setPage(1)
+  }
+
+  function limpiarFiltros() {
+    setFiltrosActivos({})
+    setPage(1)
+  }
+
+  const ordenados = sortDir
+    ? [...filtrados].sort((a, b) => {
+        const cmp = String(a[campoId] ?? '').localeCompare(String(b[campoId] ?? ''), undefined, { numeric: true, sensitivity: 'base' })
+        return sortDir === 'asc' ? cmp : -cmp
+      })
+    : filtrados
+
+  function toggleSort(colKey) {
+    if (colKey !== campoId) return
+    setSortDir(d => d === 'desc' ? 'asc' : 'desc')
+    setPage(1)
+  }
+
   useEffect(() => { setPage(1) }, [busqueda])
 
-  const totalPages = Math.max(1, Math.ceil(filtrados.length / PAGE_SIZE))
+  const totalPages = Math.max(1, Math.ceil(ordenados.length / PAGE_SIZE))
   const safePage   = Math.min(page, totalPages)
-  const paginados  = filtrados.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+  const paginados  = ordenados.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
 
   function abrirFormulario(mode, item = null) {
     setDetalle(null)
     setModal({ mode, item })
   }
 
-  function exportar() {
+  async function exportar() {
     if (!items.length) return
     const hoy = new Date().toISOString().slice(0, 10)
+    const camposExport = campos.length ? campos : columnas
     const filas = [
-      columnas.map(c => c.label),
-      ...filtrados.map(item => columnas.map(c => item[c.key] ?? '')),
+      camposExport.map(c => c.label),
+      ...ordenados.map(item => camposExport.map(c => item[c.key] ?? '')),
     ]
-    descargarCsv(filas, `${titulo.toLowerCase()}_${hoy}.csv`)
+    await descargarXlsx(filas, `${titulo.toLowerCase()}_${hoy}.xlsx`)
   }
 
-  const contadorTexto = busqueda.trim()
+  const hayBusquedaOFiltros = !!busqueda.trim() || totalFiltrosActivos > 0
+
+  const contadorTexto = hayBusquedaOFiltros
     ? `${filtrados.length} de ${items.length} ${titulo.toLowerCase()}`
     : `${items.length} ${titulo.toLowerCase()}`
 
@@ -172,6 +243,62 @@ export default function PaginaActivos({
           </span>
         )}
         <div className="flex gap-2 flex-shrink-0">
+          {filtros.length > 0 && (
+            <div className="relative" ref={filtroRef}>
+              <button onClick={() => setPanelFiltros(p => !p)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer
+                  ${totalFiltrosActivos > 0
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : 'bg-slate-200 hover:bg-slate-300 dark:bg-white/10 dark:hover:bg-white/15 text-slate-700 dark:text-white'}`}>
+                <SlidersHorizontal size={15} />
+                <span className="hidden sm:inline">Filtros</span>
+                {totalFiltrosActivos > 0 && (
+                  <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-white/25 text-[10px] font-bold">
+                    {totalFiltrosActivos}
+                  </span>
+                )}
+              </button>
+              {panelFiltros && (
+                <div className="absolute right-0 mt-2 z-30 w-72 max-h-[26rem] overflow-y-auto rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1A2332] shadow-2xl p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Filtrar por</p>
+                    {totalFiltrosActivos > 0 && (
+                      <button onClick={limpiarFiltros}
+                        className="text-xs text-green-600 dark:text-green-400 hover:underline cursor-pointer">
+                        Limpiar
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-4">
+                    {filtros.map(f => {
+                      const opciones = opcionesFiltro(f.key)
+                      if (!opciones.length) return null
+                      return (
+                        <div key={f.key}>
+                          <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">{f.label}</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {opciones.map(o => {
+                              const activo = !!filtrosActivos[f.key]?.has(o.valor)
+                              return (
+                                <button key={o.valor} onClick={() => toggleValorFiltro(f.key, o.valor)}
+                                  className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors cursor-pointer
+                                    ${activo
+                                      ? 'bg-green-600 border-green-600 text-white'
+                                      : 'bg-transparent border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:border-green-400 dark:hover:border-green-500/50'}`}>
+                                  {o.valor}{' '}
+                                  <span className={activo ? 'text-white/70' : 'text-slate-400 dark:text-slate-500'}>({o.count})</span>
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           <button onClick={exportar} disabled={!items.length}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-white/10 dark:hover:bg-white/15 text-slate-700 dark:text-white text-sm font-medium transition-colors disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed">
             <Download size={15} /> <span className="hidden sm:inline">Excel</span>
@@ -191,7 +318,16 @@ export default function PaginaActivos({
             <thead className="text-slate-500 dark:text-slate-400 text-xs uppercase border-b border-slate-200 dark:border-white/5 sticky top-0 bg-white dark:bg-[#1A2332]">
               <tr>
                 {columnas.map(col => (
-                  <th key={col.key} className="px-4 py-3 font-semibold whitespace-nowrap">{col.label}</th>
+                  <th key={col.key} className="px-4 py-3 font-semibold whitespace-nowrap">
+                    {col.key === campoId ? (
+                      <span onClick={() => toggleSort(col.key)}
+                        className="inline-flex items-center gap-1 cursor-pointer select-none hover:text-slate-700 dark:hover:text-slate-200 transition-colors">
+                        {col.label}
+                        {sortDir === 'asc' && <ChevronUp size={13} />}
+                        {sortDir === 'desc' && <ChevronDown size={13} />}
+                      </span>
+                    ) : col.label}
+                  </th>
                 ))}
               </tr>
             </thead>
@@ -206,8 +342,10 @@ export default function PaginaActivos({
                         <Icono size={32} strokeWidth={1.3} />
                       </div>
                       <div className="text-center">
-                        <p className="text-sm font-medium">{busqueda ? `Sin resultados para "${busqueda}"` : `Sin ${titulo.toLowerCase()} registrados`}</p>
-                        {!busqueda && <p className="text-xs mt-0.5 text-slate-300 dark:text-white/20">Usá el botón Nuevo para agregar el primero</p>}
+                        <p className="text-sm font-medium">
+                          {busqueda ? `Sin resultados para "${busqueda}"` : hayBusquedaOFiltros ? 'Sin resultados para estos filtros' : `Sin ${titulo.toLowerCase()} registrados`}
+                        </p>
+                        {!hayBusquedaOFiltros && <p className="text-xs mt-0.5 text-slate-300 dark:text-white/20">Usá el botón Nuevo para agregar el primero</p>}
                       </div>
                     </div>
                   </td>

@@ -42,6 +42,13 @@ const CAMPOS_BASE = [
   },
 ]
 
+const FILTROS = [
+  { key: 'estado',    label: 'Estado' },
+  { key: 'tipo',      label: 'Tipo' },
+  { key: 'marca',     label: 'Marca' },
+  { key: 'ubicacion', label: 'Ubicación' },
+]
+
 const PASOS = [
   { titulo: 'Identificación', campos: ['codigo', 'tipo', 'marca', 'modelo'] },
   { titulo: 'Hardware',       campos: ['procesador', 'ram', 'discoDuro', 'sistemaOperativo'] },
@@ -64,7 +71,7 @@ export default function Equipos() {
     <PaginaActivos
       titulo="Equipos" subtitulo="Gestión de equipos informáticos"
       icono={Monitor} api={equiposApi}
-      columnas={COLUMNAS} campos={campos} pasos={PASOS}
+      columnas={COLUMNAS} campos={campos} pasos={PASOS} filtros={FILTROS}
       campoId="codigo"
     />
   )

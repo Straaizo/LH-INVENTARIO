@@ -51,6 +51,7 @@ export const celularesApi = makeApi('/api/activos/celulares', (r) => ({
   imei:           r.imei ?? '',
   fechaEntrega:   r.fecha_entrega ?? '',
   responsable:    r.responsable ?? '',
+  identificador:  r.identificador ?? '',
   comentario:     r.comentario ?? '',
 }))
 

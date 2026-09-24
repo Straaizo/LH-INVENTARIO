@@ -20,6 +20,10 @@ dist-ssr
 *.local
 .firebase
 
+# Scripts/exports de migracion de datos y cargas masivas (datos reales de la empresa)
+*.sql
+*.csv
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

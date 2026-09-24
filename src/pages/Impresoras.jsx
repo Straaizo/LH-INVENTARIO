@@ -20,7 +20,7 @@ const CAMPOS = [
   {
     key: 'estado', label: 'Estado',
     opciones: [
-      { value: 'Activo',        label: 'Activo' },
+      { value: 'Asignado',      label: 'Asignado' },
       { value: 'De baja',       label: 'De baja' },
       { value: 'En reparación', label: 'En reparación' },
       { value: 'Inactivo',      label: 'Inactivo' },
@@ -33,12 +33,18 @@ const PASOS = [
   { titulo: 'Asignación',            campos: ['responsable', 'estado'] },
 ]
 
+const FILTROS = [
+  { key: 'estado',    label: 'Estado' },
+  { key: 'conexion',  label: 'Conexión' },
+  { key: 'ubicacion', label: 'Ubicación' },
+]
+
 export default function Impresoras() {
   return (
     <PaginaActivos
       titulo="Impresoras" subtitulo="Gestión de impresoras corporativas"
       icono={Printer} api={impresorasApi}
-      columnas={COLUMNAS} campos={CAMPOS} pasos={PASOS}
+      columnas={COLUMNAS} campos={CAMPOS} pasos={PASOS} filtros={FILTROS}
       campoId="impresora"
     />
   )

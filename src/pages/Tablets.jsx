@@ -22,7 +22,7 @@ const CAMPOS = [
   {
     key: 'estado', label: 'Estado',
     opciones: [
-      { value: 'Activo',        label: 'Activo' },
+      { value: 'Asignado',      label: 'Asignado' },
       { value: 'De baja',       label: 'De baja' },
       { value: 'En reparación', label: 'En reparación' },
       { value: 'Inactivo',      label: 'Inactivo' },
@@ -36,12 +36,17 @@ const PASOS = [
   { titulo: 'Asignación',     campos: ['responsable', 'estado'] },
 ]
 
+const FILTROS = [
+  { key: 'estado', label: 'Estado' },
+  { key: 'marca',  label: 'Marca' },
+]
+
 export default function Tablets() {
   return (
     <PaginaActivos
       titulo="Tablets" subtitulo="Gestión de tablets corporativas"
       icono={Tablet} api={tabletsApi}
-      columnas={COLUMNAS} campos={CAMPOS} pasos={PASOS}
+      columnas={COLUMNAS} campos={CAMPOS} pasos={PASOS} filtros={FILTROS}
       campoId="codigo"
     />
   )
