@@ -11,6 +11,17 @@ export async function listarDestinos() {
   } catch (_) { return [] }
 }
 
+export async function listarSucursales() {
+  try {
+    const res = await http.get('/api/catalogo/sucursales')
+    const raw = Array.isArray(res.data) ? res.data : (res.data?.data || [])
+    return raw.map((s) => ({
+      id:     s.id ?? 0,
+      nombre: s.nombre ?? '',
+    }))
+  } catch (_) { return [] }
+}
+
 export async function listarTiposMovimiento() {
   try {
     const res = await http.get('/api/catalogo/tipos-movimiento')

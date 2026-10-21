@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Monitor } from 'lucide-react'
 import PaginaActivos, { EstadoBadge } from '../components/PaginaActivos'
 import { equiposApi } from '../services/activosApi'
-import { listarDestinos } from '../services/catalogosApi'
+import { listarSucursales } from '../services/catalogosApi'
 
 const COLUMNAS = [
   { key: 'codigo',      label: 'Código',      truncate: true },
@@ -26,7 +26,7 @@ const CAMPOS_BASE = [
   { key: 'antivirus',        label: 'Antivirus' },
   { key: 'numeroSerie',      apiKey: 'numero_serie',      label: 'N° Serie' },
   { key: 'fechaRevision',    apiKey: 'fecha_revision',    label: 'Fecha revisión' },
-  { key: 'ubicacion',        label: 'Ubicación',    fullWidth: true },
+  { key: 'sucursal',         label: 'Sucursal',     fullWidth: true },
   { key: 'responsable',      label: 'Responsable',  fullWidth: true },
   { key: 'comentario',       label: 'Comentario',   fullWidth: true, opcional: true },
   {
@@ -46,24 +46,24 @@ const FILTROS = [
   { key: 'estado',    label: 'Estado' },
   { key: 'tipo',      label: 'Tipo' },
   { key: 'marca',     label: 'Marca' },
-  { key: 'ubicacion', label: 'Ubicación' },
+  { key: 'sucursal',  label: 'Sucursal' },
 ]
 
 const PASOS = [
   { titulo: 'Identificación', campos: ['codigo', 'tipo', 'marca', 'modelo'] },
   { titulo: 'Hardware',       campos: ['procesador', 'ram', 'discoDuro', 'sistemaOperativo'] },
   { titulo: 'Software',       campos: ['office', 'antivirus', 'numeroSerie', 'fechaRevision'] },
-  { titulo: 'Asignación',     campos: ['ubicacion', 'responsable', 'estado', 'comentario'] },
+  { titulo: 'Asignación',     campos: ['sucursal', 'responsable', 'estado', 'comentario'] },
 ]
 
 export default function Equipos() {
-  const [destinos, setDestinos] = useState([])
+  const [sucursales, setSucursales] = useState([])
 
-  useEffect(() => { listarDestinos().then(setDestinos) }, [])
+  useEffect(() => { listarSucursales().then(setSucursales) }, [])
 
   const campos = CAMPOS_BASE.map(c =>
-    c.key === 'ubicacion'
-      ? { ...c, opciones: destinos.map(d => ({ value: d.nombre, label: d.nombre })) }
+    c.key === 'sucursal'
+      ? { ...c, opciones: sucursales.map(s => ({ value: s.nombre, label: s.nombre })) }
       : c
   )
 

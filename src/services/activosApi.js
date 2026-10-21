@@ -25,7 +25,7 @@ export const equiposApi = makeApi('/api/activos/equipos', (r) => ({
   codigo:          r.codigo_equipo ?? '',
   estado:          r.estado ?? '',
   antivirus:       r.antivirus ?? '',
-  ubicacion:       r.ubicacion ?? '',
+  sucursal:        r.sucursal ?? '',
   tipo:            r.tipo ?? '',
   marca:           r.marca ?? '',
   modelo:          r.modelo ?? '',
@@ -52,6 +52,7 @@ export const celularesApi = makeApi('/api/activos/celulares', (r) => ({
   fechaEntrega:   r.fecha_entrega ?? '',
   responsable:    r.responsable ?? '',
   identificador:  r.identificador ?? '',
+  sucursal:       r.sucursal ?? '',
   comentario:     r.comentario ?? '',
 }))
 
@@ -69,7 +70,7 @@ export const tabletsApi = makeApi('/api/activos/tablets', (r) => ({
 export const impresorasApi = makeApi('/api/activos/impresoras', (r) => ({
   id:          r.id_impresora ?? r.id ?? 0,
   estado:      r.estado ?? '',
-  ubicacion:   r.ubicacion ?? '',
+  sucursal:    r.sucursal ?? '',
   impresora:   r.impresora ?? '',
   conexion:    r.conexion ?? '',
   fecha:       r.fecha ?? '',

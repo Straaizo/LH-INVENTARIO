@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react'
 import { Smartphone } from 'lucide-react'
 import PaginaActivos, { EstadoBadge } from '../components/PaginaActivos'
 import { celularesApi } from '../services/activosApi'
+import { listarSucursales } from '../services/catalogosApi'
 
 const COLUMNAS = [
   { key: 'numero',      label: 'Número' },
@@ -13,7 +15,7 @@ const COLUMNAS = [
   { key: 'estado',      label: 'Estado',       render: v => <EstadoBadge estado={v} /> },
 ]
 
-const CAMPOS = [
+const CAMPOS_BASE = [
   { key: 'numero',        label: 'Número' },
   { key: 'identificador', label: 'Identificador', opcional: true },
   { key: 'marca',         label: 'Marca' },
@@ -23,6 +25,7 @@ const CAMPOS = [
   { key: 'imei',          label: 'IMEI' },
   { key: 'fechaEntrega',  apiKey: 'fecha_entrega', label: 'Fecha entrega' },
   { key: 'responsable',   label: 'Responsable', fullWidth: true },
+  { key: 'sucursal',      label: 'Sucursal',    fullWidth: true },
   { key: 'comentario',    label: 'Comentario',  fullWidth: true, opcional: true },
   {
     key: 'estado', label: 'Estado',
@@ -39,7 +42,7 @@ const CAMPOS = [
 const PASOS = [
   { titulo: 'Identificación', campos: ['numero', 'identificador', 'marca', 'modelo', 'tipoCelular'] },
   { titulo: 'Detalles',       campos: ['compania', 'imei', 'fechaEntrega'] },
-  { titulo: 'Asignación',     campos: ['responsable', 'estado', 'comentario'] },
+  { titulo: 'Asignación',     campos: ['responsable', 'sucursal', 'estado', 'comentario'] },
 ]
 
 const FILTROS = [
@@ -47,14 +50,25 @@ const FILTROS = [
   { key: 'tipoCelular',  label: 'Tipo' },
   { key: 'marca',        label: 'Marca' },
   { key: 'compania',     label: 'Compañía' },
+  { key: 'sucursal',     label: 'Sucursal' },
 ]
 
 export default function Celulares() {
+  const [sucursales, setSucursales] = useState([])
+
+  useEffect(() => { listarSucursales().then(setSucursales) }, [])
+
+  const campos = CAMPOS_BASE.map(c =>
+    c.key === 'sucursal'
+      ? { ...c, opciones: sucursales.map(s => ({ value: s.nombre, label: s.nombre })) }
+      : c
+  )
+
   return (
     <PaginaActivos
       titulo="Celulares" subtitulo="Gestión de celulares corporativos"
       icono={Smartphone} api={celularesApi}
-      columnas={COLUMNAS} campos={CAMPOS} pasos={PASOS} filtros={FILTROS}
+      columnas={COLUMNAS} campos={campos} pasos={PASOS} filtros={FILTROS}
       campoId="numero"
     />
   )

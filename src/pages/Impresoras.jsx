@@ -1,20 +1,22 @@
+import { useEffect, useState } from 'react'
 import { Printer } from 'lucide-react'
 import PaginaActivos, { EstadoBadge } from '../components/PaginaActivos'
 import { impresorasApi } from '../services/activosApi'
+import { listarSucursales } from '../services/catalogosApi'
 
 const COLUMNAS = [
   { key: 'impresora',   label: 'Impresora',   truncate: true },
   { key: 'conexion',    label: 'Conexión' },
-  { key: 'ubicacion',   label: 'Ubicación',   truncate: true },
+  { key: 'sucursal',    label: 'Sucursal',    truncate: true },
   { key: 'responsable', label: 'Responsable', truncate: true },
   { key: 'fecha',       label: 'Fecha' },
   { key: 'estado',      label: 'Estado',      render: v => <EstadoBadge estado={v} /> },
 ]
 
-const CAMPOS = [
+const CAMPOS_BASE = [
   { key: 'impresora',   label: 'Impresora',   fullWidth: true },
   { key: 'conexion',    label: 'Conexión' },
-  { key: 'ubicacion',   label: 'Ubicación' },
+  { key: 'sucursal',    label: 'Sucursal' },
   { key: 'fecha',       label: 'Fecha' },
   { key: 'responsable', label: 'Responsable', fullWidth: true },
   {
@@ -29,22 +31,32 @@ const CAMPOS = [
 ]
 
 const PASOS = [
-  { titulo: 'Datos de la impresora', campos: ['impresora', 'conexion', 'ubicacion', 'fecha'] },
+  { titulo: 'Datos de la impresora', campos: ['impresora', 'conexion', 'sucursal', 'fecha'] },
   { titulo: 'Asignación',            campos: ['responsable', 'estado'] },
 ]
 
 const FILTROS = [
   { key: 'estado',    label: 'Estado' },
   { key: 'conexion',  label: 'Conexión' },
-  { key: 'ubicacion', label: 'Ubicación' },
+  { key: 'sucursal',  label: 'Sucursal' },
 ]
 
 export default function Impresoras() {
+  const [sucursales, setSucursales] = useState([])
+
+  useEffect(() => { listarSucursales().then(setSucursales) }, [])
+
+  const campos = CAMPOS_BASE.map(c =>
+    c.key === 'sucursal'
+      ? { ...c, opciones: sucursales.map(s => ({ value: s.nombre, label: s.nombre })) }
+      : c
+  )
+
   return (
     <PaginaActivos
       titulo="Impresoras" subtitulo="Gestión de impresoras corporativas"
       icono={Printer} api={impresorasApi}
-      columnas={COLUMNAS} campos={CAMPOS} pasos={PASOS} filtros={FILTROS}
+      columnas={COLUMNAS} campos={campos} pasos={PASOS} filtros={FILTROS}
       campoId="impresora"
     />
   )
